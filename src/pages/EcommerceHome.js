@@ -147,7 +147,7 @@ const EcommerceHome = () => {
     const fetchProducts = async () => {
       setLoading(true);
       try {
-        const response = await axios.get('https://thriftstorebackend-8xii.onrender.com/api/item/items');
+        const response = await axios.get('https://thrifstorebackend.onrender.com/api/item/items');
         setProducts(response.data);
         setFilteredProducts(response.data);
       } catch (error) {
@@ -266,7 +266,7 @@ const EcommerceHome = () => {
                       }}
                     />
                     <ProductTitle>{product.name}</ProductTitle>
-                    <ProductPrice>₹{product.selling_price}</ProductPrice>
+                    <ProductPrice>${product.selling_price}</ProductPrice>
 
                     {isProductInCart ? (
                       <div>

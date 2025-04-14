@@ -9,7 +9,7 @@ const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(
   <React.StrictMode>
     <LoginProvider> {/* Wrap your app with LoginProvider */}
-    <GoogleOAuthProvider clientId="113245644939-rh7vnarrmn2gjm2lsfntmac1ouuspnp5.apps.googleusercontent.com">
+    <GoogleOAuthProvider clientId="980939869376-24ab4iahare9t3g6ko06m7iefbr2gbtg.apps.googleusercontent.com">
         <AppWrapper /> {/* This component already includes Router */}
 
       </GoogleOAuthProvider>;

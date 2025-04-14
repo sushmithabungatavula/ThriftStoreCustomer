@@ -40,7 +40,7 @@ export default function OrderDetails() {
     if (order && order[0]?.item_id) {
       const fetchItemDetails = async () => {
         try {
-          const response = await axios.get(`https://thriftstorebackend-8xii.onrender.com/api/item/${order[0].item_id}`);
+          const response = await axios.get(`https://thrifstorebackend.onrender.com/api/item/${order[0].item_id}`);
           setItemDetails(response.data);
         } catch (error) {
           console.error('Error fetching item details:', error);

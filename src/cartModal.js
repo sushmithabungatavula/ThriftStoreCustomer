@@ -54,7 +54,7 @@ const getTotalPrice = () => {
                 />
                 <div style={{ flex: 1 }}>
                   <div style={{ fontSize: '18px', fontWeight: '600' }}>{item.name}</div>
-                  <div style={{ fontSize: '16px', fontWeight: '500', margin: '5px 0', color: '#777' }}>Price: <span style={{ textDecoration: 'line-through'}}>${item.price}</span><span> {(item.price - (item.price * (item.discount / 100))).toFixed(2)}</span></div>
+                  <div style={{ fontSize: '16px', fontWeight: '500', margin: '5px 0', color: '#777' }}>Price: <span style={{ textDecoration: 'line-through'}}>₹{item.price}</span><span> {(item.price - (item.price * (item.discount / 100))).toFixed(2)}</span></div>
                   <div style={{ fontSize: '16px', color: '#555' }}>Quantity: {item.quantity}</div>
                   <div style={{ color: '#28a745', fontWeight: '500', marginTop: '8px' }}>
                     Green Points: ♻️ {item.greenPoints}
@@ -75,7 +75,7 @@ const getTotalPrice = () => {
               </div>
             ))}
             <div style={{ textAlign: 'center', marginTop: '20px' }}>
-              <h3 style={{ fontWeight: '700', fontSize: '22px' }}>Total: ${getTotalPrice()}</h3>
+              <h3 style={{ fontWeight: '700', fontSize: '22px' }}>Total: ₹{getTotalPrice()}</h3>
               <h3 style={{ color: '#28a745', fontWeight: '700', fontSize: '20px' }}>
                   Total Green Points: ♻️ {getTotalGreenPoints()}
               </h3>

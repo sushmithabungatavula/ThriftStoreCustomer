@@ -156,7 +156,7 @@ const Checkout = () => {
         const fetchItemDetails = async () => {
             const itemIds = storedCartItems.map(item => item.item_id);
             const details = await Promise.all(
-                itemIds.map(id => axios.get(`https://thrifstorebackend.onrender.com/api/item/${id}`).then(res => res.data))
+                itemIds.map(id => axios.get(`http://localhost:3000/api/item/${id}`).then(res => res.data))
             );
             setItemsDetails(details);
         };
@@ -184,7 +184,7 @@ const Checkout = () => {
         try {
           for (const item of orderItems) {
             // Step 1: Place Order
-            const orderRes = await axios.post('https://thrifstorebackend.onrender.com/api/order', {
+            const orderRes = await axios.post('http://localhost:3000/api/order', {
               customer_id: customer_id, 
               order_date: orderDate,
               order_status: orderStatus,
@@ -199,7 +199,7 @@ const Checkout = () => {
             const order_id = orderRes.data.order_id;
       
             // Step 2: Record Payment Transaction
-            // await axios.post('https://thrifstorebackend.onrender.com/api/payment/record', {
+            // await axios.post('http://localhost:3000/api/payment/record', {
             //   order_id,
             //   item_id: item.item_id,
             //   vendor_id: item.vendor_id,

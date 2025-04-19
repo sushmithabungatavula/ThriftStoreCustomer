@@ -7,7 +7,7 @@ import LoginPage from './Login';
 import Layout from './components/Layout';
 import ProtectedRoute from './components/ProtectedRoute';
 
-// Pages
+
 import EcommerceHome from './pages/EcommerceHome';
 
 import Orders from './pages/recommerceOrderList';
@@ -21,17 +21,17 @@ import LocationPicker from './pages/LocationPicker';
 import Checkout from './pages/checkOutPage';
 import OrderDetails from './pages/OrderDetails';
 import MyOrders from './pages/myOrders';
+import ReturnOrders from './pages/ReturnOrders';
 
 
 function App() {
-  // Wrap everything in LoginProvider so the context is available
   return (
     <LoginProvider>
       <Router>
         <AppRoutes />
       </Router>
     </LoginProvider>
-  );
+  )
 }
 
 function AppRoutes() {
@@ -40,7 +40,6 @@ function AppRoutes() {
 
   return (
     <Routes>
-      {/* Redirect to /EcommerceHome if logged in, otherwise show Login */}
       <Route
         path="/"
         element={isLoggedIn ? <Navigate to="/EcommerceHome" replace /> : <LoginPage />}
@@ -51,7 +50,6 @@ function AppRoutes() {
         element={<LoginPage />}
       />
 
-      {/* Protected routes */}
       <Route
         path="/EcommerceHome"
         element={
@@ -69,6 +67,17 @@ function AppRoutes() {
           <ProtectedRoute>
             <Layout>
               <Profile />
+            </Layout>
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="/ReturnOrders"
+        element={
+          <ProtectedRoute>
+            <Layout>
+              <ReturnOrders />
             </Layout>
           </ProtectedRoute>
         }
@@ -173,10 +182,9 @@ function AppRoutes() {
         }
       />
 
-      {/* Fallback route */}
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
-  );
+  )
 }
 
 export default App;

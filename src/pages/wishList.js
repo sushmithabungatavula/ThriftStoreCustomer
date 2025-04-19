@@ -90,7 +90,7 @@ const WishlistPage = () => {
     const fetchProducts = async () => {
       setLoading(true);
       try {
-        const response = await axios.get('https://thrifstorebackend.onrender.com/api/item/items');
+        const response = await axios.get('http://localhost:3000/api/item/items');
         console.log('allresponse....',response.data);
         setProducts(response.data);
       } catch (error) {
@@ -146,7 +146,7 @@ console.log('filteredProducts.....',filteredProducts);
                       }}
                     />
                     <ProductTitle>{product.name}</ProductTitle>
-                    <ProductPrice>${product.selling_price}</ProductPrice>
+                    <ProductPrice>₹{product.selling_price}</ProductPrice>
 
                     {isProductInCart ? (
                       <div>

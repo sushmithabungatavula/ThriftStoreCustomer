@@ -41,7 +41,7 @@ function Sidebar() {
     { name: 'Your Cart', icon: <FaShoppingCart />, path: '/CheckoutPage' },
     { name: 'Orders', icon: <FaBoxOpen />, path: '/MyOrdersPage' },
     { name: 'Wishlist', icon: <FaHeart />, path: '/Wishlist' },
-    { name: 'Returns & Refunds', icon: <FaTruck />, path: '/returns' },
+    { name: 'Returns & Refunds', icon: <FaTruck />, path: '/ReturnOrders' },
     { name: 'Profile', icon: <FaUsers />, path: '/profile' },
     // { name: 'Customer Support', icon: <FaHeadset />, subItems: [
     //   { name: 'Support Tickets', path: '/support-tickets' },

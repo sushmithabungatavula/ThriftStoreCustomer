@@ -42,7 +42,7 @@ const Login = () => {
   const handleLogin = async (e) => {
     e.preventDefault();
     try {
-      const response = await axios.post('https://thrifstorebackend.onrender.com/api/login', { email, password });
+      const response = await axios.post('http://localhost:3000/api/login', { email, password });
       console.log('responsee....',response.data);
       const { token ,customer_id, cartId, wishlistId, addressID1,addressID2,addressID3,addressID4 } = response.data;
       console.log('response.data....',response.data);
@@ -70,15 +70,13 @@ const Login = () => {
     try {
       const credentials = jwtDecode(credentialResponse.credential);
       const { name, email } = credentials;
-      console.log("credentials", credentials);
   
-      const response = await axios.post('https://thrifstorebackend.onrender.com/api/google-auth', {
+      const response = await axios.post('http://localhost:3000/api/google-auth', {
         name,
         email,
         phone: '000-000-0000',  // Default phone
         address: 'Google User Address'  // Default address
       });
-      console.log("response", response);
   
       const { token, customer_id, cartId, wishlistId, addressID1, addressID2, addressID3, addressID4 } = response.data;
   
@@ -136,7 +134,7 @@ const Login = () => {
   };
 
   try {
-    const response = await axios.post('https://thrifstorebackend.onrender.com/api/signup', user);
+    const response = await axios.post('http://localhost:3000/api/signup', user);
     if (response.status === 201) {
       alert('Signup successful! Please log in.');
       setShowSignUp(false);
@@ -146,8 +144,6 @@ const Login = () => {
     alert('Signup failed');
   }
 };
-
-
 
 
   if (isLoggedIn) {

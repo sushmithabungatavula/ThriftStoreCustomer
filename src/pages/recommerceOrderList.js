@@ -132,7 +132,7 @@ const carouselSettings = {
           <Detail><strong>Status:</strong></Detail><p style={{fontSize:'3vw',textAlign:'left'}}> {order.status}</p>
           <Detail><strong>Delivery Address:</strong></Detail>
             <p style={{fontSize:'3vw',textAlign:'left'}}>{order.location.map(loc => loc.address).join(', ')}</p>
-          <Detail><strong>Total Price:</strong> ${order.totalPrice}</Detail>
+          <Detail><strong>Total Price:</strong> ₹{order.totalPrice}</Detail>
         </OrderDetailsWrapper>
         <OrderStatusWrapper>
             <OrderStatus style={{ height: '30vh' }} orderStatus={order.status} />
@@ -150,7 +150,7 @@ const carouselSettings = {
 
       {order.cart.map((item, idx) => (
         <ItemContainer key={idx}>
-          <ItemDetail>{item.name} - {item.quantity} units - ${item.price}</ItemDetail>
+          <ItemDetail>{item.name} - {item.quantity} units - ₹{item.price}</ItemDetail>
         </ItemContainer>
       ))}
 
@@ -179,7 +179,7 @@ const carouselSettings = {
           <ProductCard key={idx}>
             <ProductImage src={product.images[0] || '/placeholder-image.jpg'} alt={product.name} />
             <ProductName>{product.name}</ProductName>
-            <ProductPrice>Price: ${product.price}</ProductPrice>
+            <ProductPrice>Price: ₹{product.price}</ProductPrice>
           </ProductCard>
         ))}
       </div>
@@ -256,14 +256,14 @@ const carouselSettings = {
                       <InfoCard>
                         <InfoDetail><strong>ID:</strong> {order.id}</InfoDetail>
                         <InfoDetail><strong>Customer:</strong> {order.name}</InfoDetail>
-                        <InfoDetail><strong>Total Price:</strong> ${order.totalPrice}</InfoDetail>
+                        <InfoDetail><strong>Total Price:</strong> ₹{order.totalPrice}</InfoDetail>
                         <InfoDetail>Address: {order.location.map(loc => loc.address).join(', ')}</InfoDetail>
                       </InfoCard>
                     </OrderTileDetails>
                 <OrderItemsListing>
                   <InfoDetail><strong>Items:</strong></InfoDetail>
                   {order.cart.map((item, idx) => (
-                    <ItemInfo key={idx}>{item.name} - {item.quantity} units - ${item.price}</ItemInfo>
+                    <ItemInfo key={idx}>{item.name} - {item.quantity} units - ₹{item.price}</ItemInfo>
                   ))}
                 </OrderItemsListing>
               </OrderTile>

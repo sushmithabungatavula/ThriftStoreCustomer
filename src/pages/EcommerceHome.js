@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useContext } from 'react';
+import React, { useState, useEffect, useContext, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import styled from 'styled-components';
@@ -49,12 +49,22 @@ const ProductGrid = styled.div`
   width: 100%;
   max-width: 1200px;
   margin: 0 auto;
-  /*
-    We'll allow auto-fill with a minimum of 250px. This typically
-    fits up to 4 columns as space permits (4x250 = 1000px plus gap).
+  /* 
+    Fixed 3 columns with minimum column width of 250px.
+    Columns will expand equally but never shrink below 250px.
   */
-  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+  grid-template-columns: repeat(3, minmax(250px, 1fr));
   justify-items: center;
+
+  /* Optional: Switch to 2 columns on medium screens */
+  @media (max-width: 900px) {
+    grid-template-columns: repeat(2, minmax(250px, 1fr));
+  }
+
+  /* Optional: Switch to 1 column on mobile */
+  @media (max-width: 600px) {
+    grid-template-columns: 1fr;
+  }
 `;
 
 const ProductCard = styled.div`
@@ -120,6 +130,20 @@ const Loader = styled.div`
   height: 60vh;
 `;
 
+
+const CategorySection = styled.div`
+  width: 100%;
+  margin-bottom: 40px;
+`;
+
+const CategoryTitle = styled.h2`
+  font-size: 24px;
+  color: #333;
+  margin-bottom: 20px;
+  padding-left: 20px;
+`;
+
+
 const EcommerceHome = () => {
   const navigate = useNavigate();
 
@@ -142,23 +166,76 @@ const EcommerceHome = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [sortBy, setSortBy] = useState('price');
   const [loading, setLoading] = useState(false);
+  const [categoryMap, setCategoryMap] = useState({});
 
   useEffect(() => {
-    const fetchProducts = async () => {
+    const fetchData = async () => {
       setLoading(true);
       try {
-        const response = await axios.get('https://thrifstorebackend.onrender.com/api/item/items');
-        setProducts(response.data);
-        setFilteredProducts(response.data);
+        // Fetch products
+        const productsResponse = await axios.get('http://localhost:3000/api/item/items');
+        const productsData = productsResponse.data;
+
+        // Extract unique category IDs
+        const categoryIds = [...new Set(productsData
+          .map(p => p.categoryId)
+          .filter(id => id && id !== ''))
+        ];
+
+        // Fetch category names
+        const categories = await Promise.all(
+          categoryIds.map(async (id) => {
+            try {
+              const response = await axios.get(`http://localhost:3000/api/vendor-categories/category/${id}`);
+              return response.data;
+            } catch (error) {
+              console.error(`Error fetching category ${id}:`, error);
+              return { categoryId: id, name: `Category ${id}` };
+            }
+          })
+        );
+
+        // Create category mapping
+        const newCategoryMap = categories.reduce((acc, curr) => {
+          acc[curr.categoryId] = curr.name;
+          return acc;
+        }, {});
+        
+        setCategoryMap(newCategoryMap);
+        setProducts(productsData);
+        setFilteredProducts(productsData);
+
       } catch (error) {
-        console.error('Error fetching products:', error);
+        console.error('Error loading data:', error);
       } finally {
         setLoading(false);
       }
     };
 
-    fetchProducts();
+    fetchData();
   }, []);
+
+  // Group products by category
+  const groupedProducts = useMemo(() => {
+    const groups = {};
+    
+    filteredProducts.forEach(product => {
+      const categoryId = product.categoryId;
+      let categoryName = 'Recommended';
+      
+      if (categoryId && categoryMap[categoryId]) {
+        categoryName = categoryMap[categoryId];
+      }
+
+      if (!groups[categoryName]) {
+        groups[categoryName] = [];
+      }
+      
+      groups[categoryName].push(product);
+    });
+
+    return groups;
+  }, [filteredProducts, categoryMap]);
 
   // Handle search input
   const handleSearch = (event) => {
@@ -232,9 +309,11 @@ const EcommerceHome = () => {
         <Loader>Loading...</Loader>
       ) : (
         <>
-          {filteredProducts.length > 0 ? (
-            <ProductGrid>
-              {filteredProducts.map((product) => {
+          {Object.entries(groupedProducts).map(([categoryName, products]) => (
+            <CategorySection key={categoryName}>
+              <CategoryTitle>{categoryName}</CategoryTitle>
+              <ProductGrid>
+                {products.map((product) => {
                 // Check if it's in the cart, find quantity:
                 const isProductInCart = cartItems.some(
                   (item) => item.item_id === product.item_id
@@ -266,7 +345,7 @@ const EcommerceHome = () => {
                       }}
                     />
                     <ProductTitle>{product.name}</ProductTitle>
-                    <ProductPrice>${product.selling_price}</ProductPrice>
+                    <ProductPrice>₹{product.selling_price}</ProductPrice>
 
                     {isProductInCart ? (
                       <div>
@@ -303,10 +382,11 @@ const EcommerceHome = () => {
                   </ProductCard>
                 );
               })}
-            </ProductGrid>
-          ) : (
-            <div>No products found.</div>
-          )}
+              </ProductGrid>
+            </CategorySection>
+          ))}
+          
+          {filteredProducts.length === 0 && <div>No products found.</div>}
         </>
       )}
     </PageContainer>

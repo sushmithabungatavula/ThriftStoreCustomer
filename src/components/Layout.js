@@ -9,10 +9,10 @@ function Layout({ children }) {
     <div className="layout">
       <Sidebar />
       <div className="main-content">
-        <div className="content">{children}</div>
+        {children}
       </div>
     </div>
-  );
+  )
 }
 
 export default Layout;

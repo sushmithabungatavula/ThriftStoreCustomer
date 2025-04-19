@@ -254,11 +254,11 @@ const CartDetails = forwardRef(({ getTotalPrice, useWallet, walletAmount, getFin
                   <span style={styles.cartItemPrice}>
                     {item.discount ? (
                       <>
-                        <span style={styles.strikeThrough}>${item.price}</span>{' '}
-                        <span style={styles.discountedPrice}>${discountedPrice.toFixed(2)}</span>
+                        <span style={styles.strikeThrough}>₹{item.price}</span>{' '}
+                        <span style={styles.discountedPrice}>₹{discountedPrice.toFixed(2)}</span>
                       </>
                     ) : (
-                      <>${item.price}</>
+                      <>₹{item.price}</>
                     )}
                   </span>
                   <span style={styles.cartItemQuantity}>x{item.quantity}</span>
@@ -271,17 +271,17 @@ const CartDetails = forwardRef(({ getTotalPrice, useWallet, walletAmount, getFin
       <div style={styles.billingInfo}>
         <div style={styles.billingRow}>
           <span>Total:</span>
-          <span>${getTotalPrice()}</span>
+          <span>₹{getTotalPrice()}</span>
         </div>
         {useWallet && (
           <div style={styles.billingRow}>
             <span>Wallet Amount Used:</span>
-            <span>${walletAmount}</span>
+            <span>₹{walletAmount}</span>
           </div>
         )}
         <div style={styles.billingRow}>
           <span style={styles.billingLabel}>Final Amount to Pay:</span>
-          <span style={styles.billingLabel}>${getFinalAmount()}</span>
+          <span style={styles.billingLabel}>₹{getFinalAmount()}</span>
         </div>
       </div>
 

@@ -1,11 +1,10 @@
-import React, { useEffect, useState ,useContext } from 'react';
+import React, { useEffect, useState, useContext } from 'react';
 import styled from 'styled-components';
 import { Container, Row, Col, Image, ListGroup, ListGroupItem, Button, Spinner } from 'react-bootstrap';
 import { ChevronRight } from 'react-bootstrap-icons';
 import { useNavigate, useParams } from 'react-router-dom';
 import axios from 'axios';
 import Goku from '../sonGoku.jpg';
-
 import { LoginContext } from '../context/LoginContext';
 
 const CenteredLoader = styled.div`
@@ -78,19 +77,28 @@ const SidebarItem = styled(ListGroupItem)`
 
 const Profile = () => {
   const navigate = useNavigate();
-
   const [profileData, setProfileData] = useState({});
   const [loading, setLoading] = useState(true);
   const [uploadedImage, setUploadedImage] = useState(null);
   const [imageFile, setImageFile] = useState(null);
-  const { wishlist_id, customer_id, setCustomerId, setCartId ,setWishIdlist } = useContext(LoginContext) || { setIsLoggedIn: () => {} };
-
-
+  const { 
+    wishlist_id, 
+    customer_id, 
+    setCustomerId, 
+    setCartId,
+    setWishIdlist,
+    setIsLoggedIn 
+  } = useContext(LoginContext) || { 
+    setIsLoggedIn: () => {},
+    setCustomerId: () => {},
+    setCartId: () => {},
+    setWishIdlist: () => {}
+  };
 
   const fetchProfileData = async () => {
     try {
       const customer_id = localStorage.getItem('customerId');
-      const response = await axios.get(`https://thrifstorebackend.onrender.com/api/customer/${customer_id}`, {
+      const response = await axios.get(`http://localhost:3000/api/customer/${customer_id}`, {
         headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
       });
       setProfileData(response.data);
@@ -105,7 +113,31 @@ const Profile = () => {
   }, [customer_id]);
 
   const handleLogout = () => {
-    localStorage.removeItem('token');
+    // Clear all localStorage items
+    const itemsToRemove = [
+      'token',
+      'customerId',
+      'cartId',
+      'wishlistId',
+      'email',
+      'isLoggedIn',
+      'cart-items',
+      'wishlist',
+      'addressID1',
+      'addressID2',
+      'addressID3',
+      'addressID4'
+    ];
+  
+    itemsToRemove.forEach(item => localStorage.removeItem(item));
+      
+    // Reset context states
+    if (setIsLoggedIn) setIsLoggedIn(false);
+    if (setCustomerId) setCustomerId(null);
+    if (setCartId) setCartId(null);
+    if (setWishIdlist) setWishIdlist(null);
+    
+    // Navigate to home page
     navigate('/');
   };
 

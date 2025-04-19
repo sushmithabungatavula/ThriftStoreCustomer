@@ -463,12 +463,12 @@ const CouponPage = () => {
                     onClick={() => setSelectedPrice(price)}
                     style={{ backgroundColor: selectedPrice === price ? '#6a1b9a' : 'white', color: selectedPrice === price ? 'white' : 'black' }}
                   >
-                    ${price}
+                    ₹{price}
                   </PriceButton>
                 ))}
               </StyledButtonGroup>
             </ButtonGroupWrapper>
-            {selectedPrice && <p>Amount to be paid: ${selectedPrice}</p>}
+            {selectedPrice && <p>Amount to be paid: ₹{selectedPrice}</p>}
             <div style={styles.radioContainer}>
               <label style={styles.radioOption}>
                 <input

@@ -104,7 +104,7 @@ const MyOrders = () => {
     }
 
     try {
-      const response = await axios.get(`https://thrifstorebackend.onrender.com/api/orders/${customer_id}`);
+      const response = await axios.get(`http://localhost:3000/api/orders/${customer_id}`);
       const groupedOrders = response.data;
 
       if (typeof groupedOrders === 'object') {
@@ -132,7 +132,7 @@ const MyOrders = () => {
     try {
       const details = await Promise.all(
         itemIds.map((id) =>
-          axios.get(`https://thrifstorebackend.onrender.com/api/item/${id}`).then((res) => res.data)
+          axios.get(`http://localhost:3000/api/item/${id}`).then((res) => res.data)
         )
       );
 

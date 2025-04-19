@@ -679,9 +679,9 @@ const ProductDescriptionPage = () => {
             <div style={styles.productInfo}>
               <p>
                 <span>M.R.P </span>
-                <span style={styles.strikethrough}>${currentProduct.price}</span>
+                <span style={styles.strikethrough}>₹{currentProduct.price}</span>
                 <span style={styles.discountedPrice}>
-                  ${calculateDiscountedPrice(currentProduct.price, currentProduct.discount)} ({currentProduct.discount}% off)
+                  ₹{calculateDiscountedPrice(currentProduct.price, currentProduct.discount)} ({currentProduct.discount}% off)
                 </span>
               </p>
               <p>{currentProduct.description}</p>
@@ -841,9 +841,9 @@ const ProductDescriptionPage = () => {
                 <p>{similarProduct.name}</p>
                 <p>
                   <span>M.R.P </span>
-                  <span style={styles.strikethrough}>${similarProduct.price}</span>
+                  <span style={styles.strikethrough}>₹{similarProduct.price}</span>
                   <span style={styles.discountedPrice}>
-                    ${calculateDiscountedPrice(similarProduct.price, similarProduct.discount)} ({similarProduct.discount}% off)
+                    ₹{calculateDiscountedPrice(similarProduct.price, similarProduct.discount)} ({similarProduct.discount}% off)
                   </span>
                 </p>
                 <div style={styles.starContainer}>{renderStars(averageRating)}</div>
@@ -910,12 +910,12 @@ const ProductDescriptionPage = () => {
                       {item.discount ? (
                         <>
                           <span style={styles.cartItemPrice}>
-                            <span style={styles.strikethrough}>${item.price}</span>{' '}
-                            <span style={styles.discountedPrice}>${discountedPrice.toFixed(2)}</span>
+                            <span style={styles.strikethrough}>₹{item.price}</span>{' '}
+                            <span style={styles.discountedPrice}>₹{discountedPrice.toFixed(2)}</span>
                           </span>
                         </>
                       ) : (
-                        <span style={styles.cartItemPrice}>${item.price}</span>
+                        <span style={styles.cartItemPrice}>₹{item.price}</span>
                       )}
 
                       <span style={styles.cartItemQuantity}>x{item.quantity}</span>
@@ -926,7 +926,7 @@ const ProductDescriptionPage = () => {
                 );
               })}
           </div>
-          <h3>Total: ${getTotalPrice()}</h3>
+          <h3>Total: ₹{getTotalPrice()}</h3>
           <h3>Total Green points:♻️ {greenPointsInCart}</h3>
         </Modal.Body>
         <Modal.Footer>

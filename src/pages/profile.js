@@ -1,8 +1,9 @@
+// Profile Page styled like Login Page UI
 import React, { useEffect, useState, useContext } from 'react';
 import styled from 'styled-components';
 import { Container, Row, Col, Image, ListGroup, ListGroupItem, Button, Spinner } from 'react-bootstrap';
 import { ChevronRight } from 'react-bootstrap-icons';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import Goku from '../sonGoku.jpg';
 import { LoginContext } from '../context/LoginContext';
@@ -12,28 +13,29 @@ const CenteredLoader = styled.div`
   justify-content: center;
   align-items: center;
   height: 100vh;
-  background: #f4f4f9;
+  background: #ffffff;
 `;
 
 const ProfileContainer = styled(Container)`
-  background-color: #f4f4f9;
-  height: 100vh;
-  padding: 20px;
+  background-color: #ffffff;
+  min-height: 100vh;
+  padding: 40px;
+  font-family: Arial, sans-serif;
 `;
 
 const ProfileHeader = styled.div`
-  background-color: #8bc34a;
-  border-radius: 20px;
+  background-color: #f5f5f5;
+  border-radius: 16px;
   padding: 30px;
-  color: white;
+  color: #1e1e1e;
   text-align: center;
-  margin-bottom: 20px;
+  margin-bottom: 30px;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
 `;
 
 const ProfileInfo = styled.div`
-  font-size: 1.2rem;
+  font-size: 1rem;
   margin-top: 10px;
-  text-align: center;
   color: #333;
 `;
 
@@ -48,30 +50,36 @@ const ProfileImage = styled(Image)`
   width: 150px;
   height: 150px;
   border-radius: 50%;
-  margin-bottom: 20px;
+  object-fit: cover;
 `;
 
 const UploadButton = styled(Button)`
-  background-color: #8bc34a;
-  border: none;
+  background-color: #ffffff;
+  color: #000;
+  border: 1px solid #ccc;
+  margin-top: 10px;
+  font-weight: bold;
+  font-size: 14px;
   &:hover {
-    background-color: #7aa73a;
+    background-color: #f0f0f0;
   }
 `;
 
 const SidebarItem = styled(ListGroupItem)`
-  padding: 20px;
-  font-size: 1.2rem;
+  padding: 16px 20px;
+  font-size: 14px;
   cursor: pointer;
   display: flex;
   justify-content: space-between;
   align-items: center;
   background-color: #fff;
-  border: 1px solid #ddd;
-  transition: background-color 0.3s ease;
+  border: 1px solid #eee;
+  transition: background-color 0.2s;
+  border-radius: 8px;
+  margin-bottom: 10px;
 
   &:hover {
-    background-color: #f1f1f1;
+    background-color: #f5f5f5;
   }
 `;
 
@@ -82,7 +90,6 @@ const Profile = () => {
   const [uploadedImage, setUploadedImage] = useState(null);
   const [imageFile, setImageFile] = useState(null);
   const { 
-    wishlist_id, 
     customer_id, 
     setCustomerId, 
     setCartId,
@@ -112,39 +119,9 @@ const Profile = () => {
     fetchProfileData();
   }, [customer_id]);
 
-  const handleLogout = () => {
-    // Clear all localStorage items
-    const itemsToRemove = [
-      'token',
-      'customerId',
-      'cartId',
-      'wishlistId',
-      'email',
-      'isLoggedIn',
-      'cart-items',
-      'wishlist',
-      'addressID1',
-      'addressID2',
-      'addressID3',
-      'addressID4'
-    ];
-  
-    itemsToRemove.forEach(item => localStorage.removeItem(item));
-      
-    // Reset context states
-    if (setIsLoggedIn) setIsLoggedIn(false);
-    if (setCustomerId) setCustomerId(null);
-    if (setCartId) setCartId(null);
-    if (setWishIdlist) setWishIdlist(null);
-    
-    // Navigate to home page
-    navigate('/');
-  };
-
   const handleImageUpload = async (files) => {
     const filesArray = Array.isArray(files) ? files : [files];
     const formData = new FormData();
-
     filesArray.forEach((file) => {
       formData.append('image', file);
     });
@@ -186,25 +163,22 @@ const Profile = () => {
   return (
     <ProfileContainer fluid>
       <ProfileHeader>
-        <h2>Your Profile Details</h2>
+        <h2>Your Profile</h2>
         <ProfileInfo>
-          <p>Name: {profileData.name}</p>
-          <p>Email: {profileData.email}</p>
+          <p><strong>Name:</strong> {profileData.name}</p>
+          <p><strong>Email:</strong> {profileData.email}</p>
         </ProfileInfo>
       </ProfileHeader>
 
       <Row>
         <Col md={4} className="d-flex flex-column align-items-center">
           <ProfileImageWrapper>
-            <ProfileImage
-              src={uploadedImage || Goku}
-              roundedCircle
-            />
+            <ProfileImage src={uploadedImage || Goku} roundedCircle />
           </ProfileImageWrapper>
 
           <div>
             <input type="file" onChange={handleFileChange} />
-            <UploadButton onClick={() => handleImageUpload(imageFile)}>Upload New Profile Image</UploadButton>
+            <UploadButton onClick={() => handleImageUpload(imageFile)}>Upload New Image</UploadButton>
           </div>
         </Col>
 
@@ -212,23 +186,19 @@ const Profile = () => {
           <ListGroup>
             <SidebarItem onClick={() => navigate('/account-info')}>
               My Account
-              <ChevronRight size="1.5rem" />
+              <ChevronRight size="1.2rem" />
             </SidebarItem>
             <SidebarItem onClick={() => navigate('/payment')}>
               Payments
-              <ChevronRight size="1.5rem" />
+              <ChevronRight size="1.2rem" />
             </SidebarItem>
             <SidebarItem onClick={() => navigate('/location-picker')}>
-              Saved addresses
-              <ChevronRight size="1.5rem" />
+              Saved Addresses
+              <ChevronRight size="1.2rem" />
             </SidebarItem>
             <SidebarItem onClick={() => navigate('/previous-orders')}>
               Previous Orders
-              <ChevronRight size="1.5rem" />
-            </SidebarItem>
-            <SidebarItem onClick={handleLogout}>
-              Logout
-              <ChevronRight size="1.5rem" />
+              <ChevronRight size="1.2rem" />
             </SidebarItem>
           </ListGroup>
         </Col>

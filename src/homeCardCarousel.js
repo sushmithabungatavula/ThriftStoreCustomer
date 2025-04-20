@@ -12,7 +12,7 @@ import slide_image_1 from './carouselImages/Balcony.jpg';
 import slide_image_2 from './carouselImages/Kitchen.jpg';
 import slide_image_3 from './carouselImages/washroom.jpg';
 import slide_image_4 from './carouselImages/bedroom.jpg';
-import slide_image_5 from './carouselImages/HomeLiving.jpg';
+import slide_image_5 from './carouselImages/EcommerceHomeLiving.jpg';
 import slide_image_6 from './carouselImages/LivingArea.jpg';
 
 import styled from 'styled-components';
@@ -54,7 +54,7 @@ const HeroCTAButton = styled.button`
   }
 `;
 
-function HomeCardCarousel() {
+function EcommerceHomeCardCarousel() {
   const carouselItems = [
     {
       id: 1,
@@ -82,8 +82,8 @@ function HomeCardCarousel() {
     },
     {
         id: 5,
-        title: 'Sustainable Home Furniture',
-        description: 'Elevate your home with eco-friendly furniture that combines timeless design and sustainable craftsmanship for every room.',
+        title: 'Sustainable EcommerceHome Furniture',
+        description: 'Elevate your EcommerceHome with eco-friendly furniture that combines timeless design and sustainable craftsmanship for every room.',
         image: slide_image_5,
     },
     {
@@ -155,4 +155,4 @@ function HomeCardCarousel() {
   );
 }
 
-export default HomeCardCarousel;
+export default EcommerceHomeCardCarousel;

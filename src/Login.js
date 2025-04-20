@@ -1,464 +1,221 @@
-import React, { useState, useEffect, useContext } from 'react';
-import styled, { keyframes } from 'styled-components';
-import { auth, googleProvider } from './firebaseConfig';
-import { signInWithPopup } from 'firebase/auth';
+import React, { useState, useContext } from 'react';
+import styled from 'styled-components';
 import axios from 'axios';
-import LocationPicker from './pages/LocationPicker';
-import { GoogleLogin } from '@react-oauth/google';
-import { jwtDecode } from "jwt-decode";
-
-import GoogleIcon from './google.png';
-
-import Spline from '@splinetool/react-spline';
 import { useNavigate } from 'react-router-dom';
-
+import LocationPicker from './pages/LocationPicker';
 import { LoginContext } from './context/LoginContext';
 
+const COLORS = {
+  background: '#ffffff',
+  formText: '#1e1e1e',
+  inputBorder: '#cccccc',
+  divider: '#888888',
+  buttonBg: '#000000',
+  buttonText: '#ffffff',
+  linkText: '#000000',
+};
+
 const Login = () => {
-  // State for splash, authentication and slide between login & signup
-
-  const { isLoggedIn, setIsLoggedIn , setCustomerId, setCartId ,setWishIdlist } = useContext(LoginContext);
-
-  const [isLoading, setIsLoading] = useState(true);
-
+  const { isLoggedIn, setIsLoggedIn, setCartId } = useContext(LoginContext);
   const [showSignUp, setShowSignUp] = useState(false);
-
-  // Login fields
-  const [email, setemail] = useState('');
+  const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  // Sign up fields
+  const [signupFname, setSignupFname] = useState('');
+  const [signupLname, setSignupLname] = useState('');
   const [signupemail, setSignupemail] = useState('');
   const [signupPassword, setSignupPassword] = useState('');
-  const [signupName, setSignupName] = useState('');
-  const [signupDob, setSignupDob] = useState('');
-  const [signupContact, setSignupContact] = useState('');
-
-  const [signupAddress, setSignupAddress] = useState('');
-
+  const [signupConfirmPassword, setSignupConfirmPassword] = useState('');
   const navigate = useNavigate();
 
-
+  const validatePassword = (pwd) => {
+    const re = /^(?=.*[!@#$%^&*])(?=.*\d).{8,}$/;
+    return re.test(pwd);
+  };
 
   const handleLogin = async (e) => {
     e.preventDefault();
     try {
       const response = await axios.post('http://localhost:3000/api/login', { email, password });
-      console.log('responsee....',response.data);
-      const { token ,customer_id, cartId, wishlistId, addressID1,addressID2,addressID3,addressID4 } = response.data;
-      console.log('response.data....',response.data);
+      const { token, customer_id, cartId, wishlistId } = response.data;
       localStorage.setItem('customerId', customer_id);
       localStorage.setItem('wishlistId', wishlistId);
       localStorage.setItem('cartId', cartId);
       localStorage.setItem('token', token);
-      localStorage.setItem('email', email);
-      localStorage.setItem('addressID1', addressID1);
-      localStorage.setItem('addressID2', addressID2);
-      localStorage.setItem('addressID3', addressID3);
-      localStorage.setItem('addressID4', addressID4);
       setCartId(cartId);
       setIsLoggedIn(true);
     } catch (error) {
-      console.error('Error logging in:', error);
-      alert('Invalid credentials');
-    }
-  };
-
-
-
-
-  const handleGoogleLogin = async (credentialResponse) => {
-    try {
-      const credentials = jwtDecode(credentialResponse.credential);
-      const { name, email } = credentials;
-  
-      const response = await axios.post('http://localhost:3000/api/google-auth', {
-        name,
-        email,
-        phone: '000-000-0000',  // Default phone
-        address: 'Google User Address'  // Default address
-      });
-  
-      const { token, customer_id, cartId, wishlistId, addressID1, addressID2, addressID3, addressID4 } = response.data;
-  
-      // Store in localStorage
-      localStorage.setItem('customerId', customer_id);
-      localStorage.setItem('wishlistId', wishlistId);
-      localStorage.setItem('cartId', cartId);
-      localStorage.setItem('token', token);
-      localStorage.setItem('email', email);
-      localStorage.setItem('addressID1', addressID1);
-      localStorage.setItem('addressID2', addressID2);
-      localStorage.setItem('addressID3', addressID3);
-      localStorage.setItem('addressID4', addressID4);
-  
-      // Update state
-      setCartId(cartId);
-      setIsLoggedIn(true);
-      navigate('/EcommerceHome');
-    } catch (error) {
-      console.error('Google authentication failed:', error);
-      alert('Google login/signup failed');
-    }
-  };
-  
-  // In your GoogleLogin component
-
-
-
-  const handleSocialLogin = async () => {
-    try {
-      const result = await signInWithPopup(auth, googleProvider);
-      const token = await result.user.getIdToken();
-      localStorage.setItem('token', token);
-      setIsLoggedIn(true);
-      navigate('/EcommerceHome');
-    } catch (error) {
-      console.error('Error signing in with provider', error);
+      if (error.response?.status === 401) {
+        alert('Wrong password. Please try again.');
+      } else {
+        alert('No account found. Please check your email or create a new account.');
+      }
     }
   };
 
 
   const handleSignup = async (e) => {
-  e.preventDefault();
+    e.preventDefault();
+    if (!signupemail.includes('@')) return alert('Please enter a valid email address.');
+    if (signupPassword !== signupConfirmPassword) return alert("Passwords don't match.");
+    if (!validatePassword(signupPassword)) return alert('Password must be 8+ characters, include a symbol and a number.');
 
-  const registrationDate = new Date().toISOString(); // Current date as registration date
+    const user = {
+      name: signupFname + ' ' + signupLname,
+      email: signupemail,
+      password: signupPassword,
+      registration_date: new Date().toISOString(),
+    };
 
-  // Send the data to the backend with proper fields
-  const user = {
-    name: signupName,
-    email: signupemail,
-    password: signupPassword,
-    phone: signupContact,
-    address: signupAddress, // Make sure address is part of the form
-    registration_date: registrationDate, // You can omit this if handled by the backend
+    try {
+      const response = await axios.post('http://localhost:3000/api/signup', user);
+      if (response.status === 201) {
+        alert('Signup successful! Please log in.');
+        setShowSignUp(false);
+      }
+    } catch (error) {
+      alert('Signup failed');
+    }
   };
 
-  try {
-    const response = await axios.post('http://localhost:3000/api/signup', user);
-    if (response.status === 201) {
-      alert('Signup successful! Please log in.');
-      setShowSignUp(false);
-    }
-  } catch (error) {
-    console.error('Error signing up:', error);
-    alert('Signup failed');
-  }
-};
-
-
-  if (isLoggedIn) {
-    return <LocationPicker />;
-  }
+  if (isLoggedIn) return <LocationPicker />;
 
   return (
-    <Container>
-      <MainContent>
-        {/* LOGIN SECTION */}
-
-        <BrandTitleWrapper>
-              <BrandTitle>Thrift Store</BrandTitle>
-        </BrandTitleWrapper>
-        <LoginSection showSignUp={showSignUp}>
-          <LeftPanel>
-            <SplineContainer>
-              <Spline
-                scene="https://prod.spline.design/mOZsw97NrtjZUCaD/scene.splinecode"
-                style={{ width: '100%', height: '100%' }}
-              />
-            </SplineContainer>
-          </LeftPanel>
-          <LoginRightSide>
-            <CardBase isSignUp={false}>
-              
-              {/* <Title>Welcome to Thrift Store</Title> */}
-              <form onSubmit={handleLogin}>
-                <InputField
-                  type="text"
-                  value={email}
-                  onChange={(e) => setemail(e.target.value)}
-                  placeholder="email"
-                  required
-                />
-                <InputField
-                  type="password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  placeholder="Password"
-                  required
-                />
-                <Button type="submit">Login</Button>
-              </form>
-              <Or>or</Or>
-              <GoogleLogin
-                  onSuccess={handleGoogleLogin}
-                  onError={() => console.log('Google Login Failed')}
-                /> 
-              <ToggleLink onClick={() => setShowSignUp(true)}>
-                Don’t have an account? <strong>Sign up</strong>
-              </ToggleLink>
-            </CardBase>
-          </LoginRightSide>
-        </LoginSection>
-
-        {/* SIGN UP SECTION */}
-        <SignUpSection showSignUp={showSignUp}>
-          <CardBase isSignUp={true}>
-              <Title>Sign Up</Title>
-              <form onSubmit={handleSignup}>
-                <InputField
-                  type="text"
-                  value={signupemail}
-                  onChange={(e) => setSignupemail(e.target.value)}
-                  placeholder="email"
-                  required
-                />
-                <InputField
-                  type="password"
-                  value={signupPassword}
-                  onChange={(e) => setSignupPassword(e.target.value)}
-                  placeholder="Password"
-                  required
-                />
-                <InputField
-                  type="text"
-                  value={signupName}
-                  onChange={(e) => setSignupName(e.target.value)}
-                  placeholder="Name"
-                  required
-                />
-                <InputField
-                  type="text"
-                  value={signupContact}
-                  onChange={(e) => setSignupContact(e.target.value)}
-                  placeholder="Phone"
-                  required
-                />
-                <InputField
-                  type="text"
-                  value={signupAddress}
-                  onChange={(e) => setSignupAddress(e.target.value)}
-                  placeholder="Address"
-                  required
-                />
-                <Button type="submit">Sign Up</Button>
-              </form>
-              <ToggleLink onClick={() => setShowSignUp(false)}>
-                Already have an account? <strong>Log in</strong>
-              </ToggleLink>
-            </CardBase>
-        </SignUpSection>
-      </MainContent>
-    </Container>
+    <PageContainer>
+      <FormContainer>
+        <LeftPanel>
+          <LottieIframe
+            src="https://lottie.host/embed/ec2b4502-e34f-4e3e-8f06-a5a2b2986273/UbNN7xc4jk.lottie"
+            allowFullScreen
+            frameBorder="0"
+          />
+        </LeftPanel>
+        <RightPanel>
+          <BrandTitle>THRIFT STORE</BrandTitle>
+          {!showSignUp ? (
+            <form onSubmit={handleLogin}>
+              <SectionTitle>Sign In</SectionTitle>
+              <InputField type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="Email Address" required />
+              <InputField type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Password" required />
+              <Button type="submit">Login</Button>
+              <Divider>or</Divider>
+              <SubText>New User? <strong onClick={() => setShowSignUp(true)}>Create an Account</strong></SubText>
+            </form>
+          ) : (
+            <form onSubmit={handleSignup}>
+              <SectionTitle>Sign Up</SectionTitle>
+              <InputField type="text" value={signupFname} onChange={(e) => setSignupFname(e.target.value)} placeholder="First Name" required />
+              <InputField type="text" value={signupLname} onChange={(e) => setSignupLname(e.target.value)} placeholder="Last Name" required />
+              <InputField type="email" value={signupemail} onChange={(e) => setSignupemail(e.target.value)} placeholder="Email Address" required />
+              <InputField type="password" value={signupPassword} onChange={(e) => setSignupPassword(e.target.value)} placeholder="Password" required />
+              <InputField type="password" value={signupConfirmPassword} onChange={(e) => setSignupConfirmPassword(e.target.value)} placeholder="Confirm Password" required />
+              <Button type="submit">Register</Button>
+              <SubText>Already have an account? <strong onClick={() => setShowSignUp(false)}>Login</strong></SubText>
+            </form>
+          )}
+        </RightPanel>
+      </FormContainer>
+    </PageContainer>
   );
 };
 
 export default Login;
 
-// Styled Components
-
-const gradientAnimation = keyframes`
-  0% { background-position: 0% 50%; }
-  50% { background-position: 100% 50%; }
-  100% { background-position: 0% 50%; }
-`;
-
-const Container = styled.div`
+const PageContainer = styled.div`
   display: flex;
-  flex-direction: column;
-  min-height: 100vh;
-  width: 100%;
-  background: linear-gradient(-45deg, #f1f8e9, rgb(216, 243, 185), rgb(155, 194, 111), #8bc34a);
-  background-size: 400% 400%;
-  animation: ${gradientAnimation} 18s ease infinite;
-  font-family: 'Arial, sans-serif';
-`;
-
-const MainContent = styled.div`
-  flex: 1;
-  position: relative;
-  overflow: hidden;
-`;
-
-
-
-const BrandTitleWrapper = styled.div`
-  text-align: center;
-  padding: 20px 0 10px;
-`;
-
-const BrandTitle = styled.h1`
-  color: #2d2d2d;
-  font-size: 5rem;
-  font-weight: bold;
-  margin: 0;
-  cursor: default;
-  text-shadow: 2px 2px 6px rgba(0, 0, 0, 0.2);
-  transition: transform 0.4s ease;
-  display: flex;
-  align-items: center;
+  height: 100vh;
+  background-color: ${COLORS.background};
+  font-family: Arial, sans-serif;
   justify-content: center;
-  &:hover {
-    transform: scale(1.06);
-  }
+  align-items: center;
 `;
 
-
-
-const LoginSection = styled.div`
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
+const FormContainer = styled.div`
   display: flex;
-  transform: ${({ showSignUp }) => (showSignUp ? 'translateX(-100%)' : 'translateX(0)')};
-  transition: transform 0.8s cubic-bezier(0.77, 0, 0.175, 1);
-`;
-
-const SignUpSection = styled.div`
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  display: flex;
-  transform: ${({ showSignUp }) => (showSignUp ? 'translateX(0)' : 'translateX(100%)')};
-  transition: transform 0.8s cubic-bezier(0.77, 0, 0.175, 1);
+  width: 90%;
+  max-width: 1100px;
+  background-color: ${COLORS.background};
+  border-radius: 24px;
+  overflow: hidden;
+  box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
 `;
 
 const LeftPanel = styled.div`
-  flex: 0.45;
-  overflow: hidden;
-  position: relative;
-  margin-top: 30px;
-`;
-
-const SplineContainer = styled.div`
-margin-top: 90px;
-  width: 100%;
-  height: 100%;
-`;
-
-const LoginRightSide = styled.div`
-  flex: 0.55;
+  flex: 1;
+  background-color: ${COLORS.background};
   display: flex;
-  align-items: center;
   justify-content: center;
-  padding: 0 20px;
+  align-items: center;
+  padding: 40px;
 `;
 
-const CardBase = styled.div`
+const LottieIframe = styled.iframe`
   width: 100%;
-  max-width: ${({ isSignUp }) => (isSignUp ? '95vw' : '480px')};
-  background-color: rgba(255, 255, 255, 0.6);
-  backdrop-filter: blur(16px);
-  border: 1px solid rgba(255, 255, 255, 0.3);
-  border-radius: 16px;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
-  padding: 30px;
-  margin: 0 auto;
-  overflow-y: auto;
-  max-height: 65vh;
+  max-width: 400px;
+  height: 400px;
+  border: none;
+`;
+
+const RightPanel = styled.div`
+  flex: 1;
+  padding: 40px;
   display: flex;
   flex-direction: column;
-  align-items: center;
+  justify-content: center;
 `;
 
-const Logo = styled.img`
-  width: 80px;
-  height: 80px;
-  margin-bottom: 20px;
+const BrandTitle = styled.h1`
+  font-size: 3.5rem;
+  font-weight: 900;
+  color: ${COLORS.formText};
+  text-align: center;
+  margin-bottom: 10px;
 `;
 
-const Title = styled.h1`
-  font-size: 24px;
-  color: #333;
+const SectionTitle = styled.h2`
+  text-align: center;
+  font-size: 1.8rem;
+  font-weight: 800;
+  color: ${COLORS.formText};
   margin-bottom: 20px;
 `;
 
 const InputField = styled.input`
   width: 100%;
-  padding: 15px;
-  border-radius: 10px;
-  border: 1px solid #ccc;
-  margin-bottom: 20px;
-  font-size: 16px;
-  outline: none;
-  transition: border-color 0.3s ease;
-  &:focus {
-    border-color: #8ce08a;
-  }
+  padding: 14px;
+  margin-bottom: 16px;
+  border-radius: 8px;
+  border: 1px solid ${COLORS.inputBorder};
+  font-size: 1rem;
+  font-family: Arial, sans-serif;
 `;
 
 const Button = styled.button`
   width: 100%;
-  background-color: #8ce08a;
-  color: black;
-  padding: 15px;
+  padding: 14px;
+  background-color: ${COLORS.buttonBg};
+  color: ${COLORS.buttonText};
+  font-weight: bold;
+  font-size: 1rem;
   border: none;
   border-radius: 10px;
   cursor: pointer;
-  margin-bottom: 20px;
-  font-size: 16px;
-  font-weight: bold;
-  transition: background-color 0.3s ease;
-  &:hover {
-    background-color: #78c57a;
-  }
+  margin-bottom: 10px;
+  font-family: Arial, sans-serif;
 `;
 
-const Or = styled.p`
-  color: #666;
-  margin-bottom: 20px;
-  font-size: 16px;
+const Divider = styled.div`
+  text-align: center;
+  margin: 10px 0;
+  color: ${COLORS.divider};
 `;
 
-const SocialLoginButton = styled.button`
-  width: 100%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background-color: #fff;
+const SubText = styled.p`
+  text-align: center;
+  font-size: 0.95rem;
   color: #333;
-  padding: 15px;
-  border: 1px solid #ccc;
-  border-radius: 10px;
-  cursor: pointer;
-  margin-bottom: 20px;
-  font-size: 16px;
-  transition: background-color 0.3s ease;
-  &:hover {
-    background-color: #f0f0f0;
-  }
-`;
-
-const GoogleImg = styled.img`
-  margin-right: 10px;
-  width: 20px;
-  height: 20px;
-`;
-
-const ToggleLink = styled.div`
-  margin-top: 15px;
-  color: #333;
-  font-size: 16px;
-  cursor: pointer;
-  text-decoration: underline;
-  &:hover {
-    color: #555;
-  }
-`;
-
-const SplashScreen = styled.div`
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  height: 100vh;
-  width: 100vw;
-  background-color: #5e348b;
-  video {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
+  font-family: Arial, sans-serif;
+  strong {
+    cursor: pointer;
+    color: ${COLORS.linkText};
   }
 `;

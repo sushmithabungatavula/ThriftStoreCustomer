@@ -1,103 +1,94 @@
 .sidebar {
-  width: 250px;
-  background-color: #8bc34a;
-  color: #fff;
+  width: 240px;
+  background-color: #ffffff;
+  color: #1e1e1e;
+  font-family: Arial, sans-serif;
   display: flex;
   flex-direction: column;
-
   height: 100vh;
   overflow-y: auto;
   transition: width 0.3s ease;
-  position: relative;
+  box-shadow: 2px 0 10px rgba(0, 0, 0, 0.05);
 }
 
 .sidebar.collapsed {
-  width: 60px;
+  width: 70px;
 }
 
 .sidebar-header {
   display: flex;
   justify-content: space-between;
-  padding: 10px;
-  background-color: #7cb342;
   align-items: center;
-}
-
-.sidebar-title {
-  font-size: 18px;
+  padding: 12px 16px;
   font-weight: bold;
+  font-size: 18px;
+  border-bottom: 1px solid #eee;
 }
 
 .toggle-btn {
   cursor: pointer;
-
   font-size: 20px;
-  position: relative;
+  color: #1e1e1e;
 }
-
 
 .sidebar-item, .submenu-item {
   display: flex;
   align-items: center;
-  padding: 15px 20px;
-  color: #fff;
-  font-size: 16px;
+  padding: 12px 18px;
+  color: #1e1e1e;
+  font-size: 14px;
+  text-decoration: none;
+  transition: background-color 0.2s ease;
   cursor: pointer;
-  transition: background-color 0.3s;
-}
-
-.sidebar-item .icon {
-  margin-right: 10px;
-  font-size: 20px;
 }
 
 .sidebar-item:hover,
 .sidebar-item.active {
-  background-color: #7cb342;
+  background-color: #f0f0f0;
+  font-weight: bold;
 }
 
-.sidebar-item .arrow {
+.sidebar-item .icon {
+  font-size: 18px;
+  margin-right: 12px;
+}
+
+.sidebar.collapsed .text {
+  display: none;
+}
+
+.sidebar.collapsed .icon {
+  margin: 0 auto;
+}
+
+.arrow {
   margin-left: auto;
-  transition: transform 0.3s;
+  transition: transform 0.3s ease;
 }
 
-.sidebar-item .arrow.rotated {
+.arrow.rotated {
   transform: rotate(180deg);
 }
 
 .submenu {
-  max-height: 0;
-  width: 100%;
-  overflow: hidden;
-  transition: max-height 0.3s ease;
-  background-color: #7cb342;
-  display: flex;
+  display: none;
   flex-direction: column;
+  padding-left: 20px;
 }
 
 .submenu-expanded {
-  max-height: 500px;
   display: flex;
-  flex-direction: column;
 }
 
 .submenu-item {
-  padding: 10px 10px;
-  color: #fff;
-  font-size: 14px;
-  text-decoration: none;
-  transition: background-color 0.3s;
+  padding: 10px 16px;
+  color: #444;
+  font-size: 13px;
+  border-left: 2px solid transparent;
 }
 
 .submenu-item:hover,
 .submenu-item.active {
-  background-color: #689f38;
-}
-
-.sidebar.collapsed .text {
-  opacity: 0;
-}
-
-.sidebar.collapsed .icon {
-  margin-left: auto;
+  background-color: #f9f9f9;
+  border-left: 2px solid #000;
 }

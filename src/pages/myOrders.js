@@ -1,91 +1,103 @@
+// MyOrders styled with login page UI theme
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 
-// Styles for the component
+const COLORS = {
+  background: '#ffffff',
+  text: '#1e1e1e',
+  border: '#cccccc',
+  primary: '#000000',
+  primaryHover: '#333333',
+  shadow: 'rgba(0, 0, 0, 0.1)',
+};
+
 const styles = {
   container: {
-    margin: '20px',
+    margin: '30px auto',
+    padding: '20px',
+    maxWidth: '1000px',
+    backgroundColor: COLORS.background,
     fontFamily: 'Arial, sans-serif',
   },
   heading: {
     fontSize: '2rem',
-    fontWeight: '600',
-    marginBottom: '20px',
-    color: '#333',
+    fontWeight: 'bold',
+    marginBottom: '30px',
+    color: COLORS.text,
   },
   tabs: {
     display: 'flex',
     justifyContent: 'flex-start',
     marginBottom: '20px',
-    borderBottom: '2px solid #ddd',
+    borderBottom: `2px solid ${COLORS.border}`,
   },
   tab: {
     padding: '10px 20px',
     cursor: 'pointer',
     fontWeight: 'bold',
-    color: '#555',
+    color: COLORS.text,
     borderBottom: '3px solid transparent',
-    transition: 'all 0.3s',
   },
   activeTab: {
-    borderBottom: '3px solid #007bff',
-    color: '#007bff',
+    borderBottom: `3px solid ${COLORS.primary}`,
+    color: COLORS.primary,
   },
   orderCard: {
-    border: '1px solid #ddd',
-    borderRadius: '8px',
+    border: `1px solid ${COLORS.border}`,
+    borderRadius: '10px',
     padding: '20px',
     marginBottom: '20px',
-    boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)',
-    backgroundColor: '#fff',
+    boxShadow: `0 4px 8px ${COLORS.shadow}`,
+    backgroundColor: COLORS.background,
   },
   orderInfo: {
     display: 'flex',
     justifyContent: 'space-between',
     marginBottom: '15px',
-    color: '#555',
+    fontSize: '14px',
+    color: COLORS.text,
   },
   orderStatus: {
     fontWeight: 'bold',
-    color: '#28a745',
   },
   itemList: {
     listStyleType: 'none',
     padding: '0',
   },
   itemCard: {
-    borderBottom: '1px solid #f1f1f1',
+    display: 'flex',
+    alignItems: 'center',
+    gap: '15px',
+    borderBottom: `1px solid ${COLORS.border}`,
     padding: '10px 0',
   },
   itemTitle: {
-    fontSize: '1.2rem',
-    fontWeight: '500',
-    color: '#333',
+    fontSize: '16px',
+    fontWeight: '600',
+    color: COLORS.text,
   },
   itemDetails: {
-    fontSize: '0.9rem',
-    color: '#777',
+    fontSize: '14px',
+    color: '#555',
   },
   button: {
-    backgroundColor: '#007bff',
-    color: 'white',
+    backgroundColor: COLORS.primary,
+    color: COLORS.buttonText || '#fff',
     border: 'none',
-    borderRadius: '5px',
+    borderRadius: '8px',
     padding: '10px 20px',
-    cursor: 'pointer',
     fontWeight: 'bold',
-    transition: 'background-color 0.3s',
-  },
-  buttonHover: {
-    backgroundColor: '#0056b3',
+    fontSize: '14px',
+    cursor: 'pointer',
+    marginTop: '10px',
   },
   cartItemImage: {
-    width: '100px',
-    height: '100px',
+    width: '80px',
+    height: '80px',
     objectFit: 'cover',
     borderRadius: '8px',
-    marginRight: '15px',
+    border: `1px solid ${COLORS.border}`,
   },
 };
 
@@ -93,7 +105,7 @@ const MyOrders = () => {
   const [orders, setOrders] = useState([]);
   const [itemDetails, setItemDetails] = useState({});
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState('active'); // active, completed, cancelled
+  const [activeTab, setActiveTab] = useState('active');
   const navigate = useNavigate();
 
   const fetchOrders = async () => {
@@ -200,7 +212,7 @@ const MyOrders = () => {
       </div>
 
       {filteredOrders.length === 0 ? (
-        <p style={{ color: '#777' }}>No {activeTab} orders found.</p>
+        <p style={{ color: COLORS.divider }}>No {activeTab} orders found.</p>
       ) : (
         filteredOrders.map((order) => (
           <div key={order[0].order_id} style={styles.orderCard}>
@@ -221,7 +233,6 @@ const MyOrders = () => {
               >
                 <strong>Status:</strong> {order[0].order_status}
               </div>
-
             </div>
 
             <div style={styles.itemList}>
@@ -229,15 +240,17 @@ const MyOrders = () => {
                 const itemDetail = itemDetails[item.item_id];
                 return (
                   <div key={item.item_id} style={styles.itemCard}>
-                    <div style={styles.itemTitle}>{item.item_name}</div>
                     <img
                       src={itemDetail?.imageURL || 'path/to/default-image.jpg'}
                       alt={itemDetail?.item_name || 'Item Image'}
                       style={styles.cartItemImage}
                     />
-                    <div style={styles.itemDetails}>
-                      <span>Quantity: {item.item_quantity}</span> |{' '}
-                      <span>Price: ${parseFloat(item.item_price).toFixed(2)}</span>
+                    <div>
+                      <div style={styles.itemTitle}>{item.item_name}</div>
+                      <div style={styles.itemDetails}>
+                        <span>Quantity: {item.item_quantity}</span> |{' '}
+                        <span>Price: ${parseFloat(item.item_price).toFixed(2)}</span>
+                      </div>
                     </div>
                   </div>
                 );
@@ -247,12 +260,6 @@ const MyOrders = () => {
             <div>
               <button
                 style={styles.button}
-                onMouseEnter={(e) =>
-                  (e.target.style.backgroundColor = styles.buttonHover.backgroundColor)
-                }
-                onMouseLeave={(e) =>
-                  (e.target.style.backgroundColor = styles.button.backgroundColor)
-                }
                 onClick={() => navigate('/orderDetails', { state: { order } })}
               >
                 View Order Details

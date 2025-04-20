@@ -1,4 +1,9 @@
 .layout {
+
+    height: 100vh;
+    overflow-y: hidden;
+  }
+  .Container {
     display: flex;
     height: 100vh;
     overflow-y: hidden;
@@ -10,4 +15,6 @@
     flex-direction: column;
     overflow-y: auto;
   }
+
+  
   

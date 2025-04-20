@@ -146,7 +146,7 @@ console.log('filteredProducts.....',filteredProducts);
                       }}
                     />
                     <ProductTitle>{product.name}</ProductTitle>
-                    <ProductPrice>₹{product.selling_price}</ProductPrice>
+                    <ProductPrice>${product.selling_price}</ProductPrice>
 
                     {isProductInCart ? (
                       <div>

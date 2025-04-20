@@ -4,7 +4,7 @@ import styled from 'styled-components';
 import Carousel from 'react-multi-carousel';
 import 'react-multi-carousel/lib/styles.css';
 
-import HomeCardCarousel from './homeCardCarousel'; 
+import EcommerceHomeCardCarousel from './EcommerceHomeCardCarousel'; 
 
 
 const HeroSectionContainer = styled.div`
@@ -291,7 +291,7 @@ const CountdownTimer = styled.div`
 
 
 
-const HomeContent = ({ categories, searchQuery, setSearchQuery, suggestions, handleSuggestionClick, handleSearch, selectedCategory, setSelectedCategory }) => {
+const EcommerceHomeContent = ({ categories, searchQuery, setSearchQuery, suggestions, handleSuggestionClick, handleSearch, selectedCategory, setSelectedCategory }) => {
   
   return (
     <div>
@@ -312,7 +312,7 @@ const HomeContent = ({ categories, searchQuery, setSearchQuery, suggestions, han
 
 <HeroSectionContainer>
 
-        <HomeCardCarousel />
+        <EcommerceHomeCardCarousel />
 
 
 
@@ -408,4 +408,4 @@ const HomeContent = ({ categories, searchQuery, setSearchQuery, suggestions, han
   );
 };
 
-export default HomeContent;
+export default EcommerceHomeContent;

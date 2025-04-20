@@ -1,28 +1,39 @@
 import React, { useState, useContext } from 'react';
-import { NavLink } from 'react-router-dom';
+import { NavLink, useNavigate } from 'react-router-dom';
 import {
-  FaTachometerAlt,
   FaShoppingCart,
   FaBoxes,
-  FaStore,
   FaUsers,
-  FaChartBar,
-  FaCog,
-  FaHeadset,
   FaHeart,
   FaTruck,
   FaBoxOpen,
   FaChevronDown,
   FaChevronLeft,
   FaChevronRight,
+  FaSignOutAlt,
 } from 'react-icons/fa';
 import { LoginContext } from '../context/LoginContext'; 
 import './Sidebar.css';
 
 function Sidebar() {
-  const { userInfo } = useContext(LoginContext); // Access userInfo from the context
+  const { userInfo } = useContext(LoginContext);
   const [expandedMenus, setExpandedMenus] = useState([]);
-  const [collapsed, setCollapsed] = useState(false); // Track sidebar collapse state
+  const [collapsed, setCollapsed] = useState(false);
+  const navigate = useNavigate();
+
+  const { 
+    wishlist_id, 
+    customer_id, 
+    setCustomerId, 
+    setCartId,
+    setWishIdlist,
+    setIsLoggedIn 
+  } = useContext(LoginContext) || { 
+    setIsLoggedIn: () => {},
+    setCustomerId: () => {},
+    setCartId: () => {},
+    setWishIdlist: () => {}
+  };
 
   const toggleMenu = (name) => {
     if (expandedMenus.includes(name)) {
@@ -36,30 +47,30 @@ function Sidebar() {
     setCollapsed(!collapsed);
   };
 
+
   const menuItems = [
     { name: 'Home', icon: <FaBoxes />, path: '/EcommerceHome' },
     { name: 'Your Cart', icon: <FaShoppingCart />, path: '/CheckoutPage' },
     { name: 'Orders', icon: <FaBoxOpen />, path: '/MyOrdersPage' },
     { name: 'Wishlist', icon: <FaHeart />, path: '/Wishlist' },
     { name: 'Returns & Refunds', icon: <FaTruck />, path: '/ReturnOrders' },
-    { name: 'Profile', icon: <FaUsers />, path: '/profile' },
-    // { name: 'Customer Support', icon: <FaHeadset />, subItems: [
-    //   { name: 'Support Tickets', path: '/support-tickets' },
-    //   { name: 'Live Chat', path: '/live-chat' },
-    // ]}
+    
   ];
 
   return (
     <div className={`sidebar ${collapsed ? 'collapsed' : ''}`}>
-
-        <div className="toggle-btn" onClick={toggleSidebar}>
-          {collapsed ?  <FaChevronLeft /> : <FaChevronRight />}
-        </div>
- 
+      <div className="toggle-btn" onClick={toggleSidebar}>
+        {collapsed ? <FaChevronRight /> : <FaChevronLeft />}
+      </div>
 
       {menuItems.map((item, index) => (
         <div key={index}>
-          {item.subItems ? (
+          {item.action === 'logout' ? (
+            <div className="sidebar-item" >
+              <span className="icon">{item.icon}</span>
+              <span className="text">{item.name}</span>
+            </div>
+          ) : item.subItems ? (
             <>
               <div
                 className={`sidebar-item ${expandedMenus.includes(item.name) ? 'active' : ''}`}

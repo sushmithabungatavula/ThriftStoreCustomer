@@ -1,370 +1,306 @@
+// Checkout with address modal form for new address
 import React, { useEffect, useState, useContext } from 'react';
 import axios from 'axios';
-
+import styled from 'styled-components';
 import { LoginContext } from '../context/LoginContext';
 
-// Inline CSS for the upgraded checkout page
-const styles = {
-    checkoutContainer: {
-        display: 'flex',
-        justifyContent: 'space-between',
-        padding: '40px 30px',
-        backgroundColor: '#f4f7f9',
-        minHeight: '100vh',
-    },
-    checkoutSteps: {
-        flex: 2,
-        paddingRight: '30px',
-        maxWidth: '680px',
-    },
-    step: {
-        backgroundColor: 'white',
-        padding: '25px',
-        marginBottom: '20px',
-        borderRadius: '10px',
-        boxShadow: '0 8px 15px rgba(0, 0, 0, 0.1)',
-        cursor: 'pointer',
-        transition: 'all 0.3s ease-in-out',
-    },
-    stepActive: {
-        backgroundColor: '#eff4fb',
-    },
-    stepTitle: {
-        fontSize: '22px',
-        marginBottom: '10px',
-        fontWeight: 'bold',
-        color: '#333',
-    },
-    stepIcon: {
-        width: '35px',
-        height: '35px',
-        borderRadius: '50%',
-        backgroundColor: '#5f7c8c',
-        color: 'white',
-        display: 'inline-flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        fontSize: '18px',
-        marginRight: '15px',
-        transition: 'background-color 0.3s',
-    },
-    stepIconCompleted: {
-        backgroundColor: '#5cb85c',
-    },
-    cartItem: {
-        display: 'flex',
-        flexDirection: 'row',
-        marginBottom: '20px',
-        padding: '15px',
-        border: '1px solid #ddd',
-        borderRadius: '8px',
-        boxShadow: '0 2px 5px rgba(0, 0, 0, 0.1)',
-    },
-    cartItemImage: {
-        width: '100px',
-        height: '100px',
-        objectFit: 'cover',
-        borderRadius: '8px',
-        marginRight: '15px',
-    },
-    cartItemDetails: {
-        flex: 1,
-        display: 'flex',
-        flexDirection: 'column',
-    },
-    cartItemName: {
-        fontSize: '18px',
-        fontWeight: 'bold',
-        color: '#333',
-    },
-    cartItemInfo: {
-        fontSize: '14px',
-        color: '#555',
-        marginBottom: '5px',
-    },
-    cartItemPrice: {
-        fontSize: '18px',
-        fontWeight: 'bold',
-        color: '#333',
-    },
-    placeOrderBtn: {
-        backgroundColor: '#333',
-        color: 'white',
-        border: 'none',
-        padding: '15px 25px',
-        borderRadius: '5px',
-        cursor: 'pointer',
-        width: '100%',
-        fontSize: '18px',
-        transition: 'background-color 0.3s, transform 0.3s',
-    },
-    placeOrderBtnHover: {
-        backgroundColor: '#555',
-        transform: 'scale(1.05)',
-    },
-    summary: {
-        flex: 1,
-        backgroundColor: '#ffffff',
-        padding: '20px',
-        boxShadow: '0 4px 10px rgba(0, 0, 0, 0.1)',
-        borderRadius: '8px',
-    },
-    summaryTitle: {
-        fontSize: '22px',
-        marginBottom: '20px',
-        color: '#333',
-    },
-    summaryDetails: {
-        fontSize: '16px',
-        color: '#555',
-    },
-    summaryDetailsParagraph: {
-        marginBottom: '10px',
-    },
-    expandedStepContent: {
-        display: 'block',
-    },
-    collapsedStepContent: {
-        display: 'none',
-    },
+const COLORS = {
+  background: '#ffffff',
+  text: '#1e1e1e',
+  inputBorder: '#cccccc',
+  divider: '#888888',
+  button: '#000000',
+  buttonText: '#ffffff',
+  cardBackground: '#ffffff',
+  cardShadow: 'rgba(0, 0, 0, 0.1)'
 };
 
 const Checkout = () => {
-      const {
-        wishlist,
-        cartItems,
-        setCartItems,
-        handleWishlistToggle,
-        handleAddToCart,
-        token,
-        setCustomerId,
-        customer_id,
-        handleReduceQuantity
-      } = useContext(LoginContext);
+  const {
+    cartItems,
+    setCartItems,
+    handleAddToCart,
+    handleReduceQuantity,
+    customer_id
+  } = useContext(LoginContext);
 
-    const [address, setAddress] = useState(null);
-    const [itemsDetails, setItemsDetails] = useState([]);
-    const [expandedStep, setExpandedStep] = useState(1);  // Tracks the currently expanded step
+  const [address, setAddress] = useState(null);
+  const [itemsDetails, setItemsDetails] = useState([]);
+  const [expandedStep, setExpandedStep] = useState(1);
+  const [paymentMethod, setPaymentMethod] = useState('cod');
+  const [showModal, setShowModal] = useState(false);
+  const [newAddress, setNewAddress] = useState({
+    name: '',
+    addressLine1: '',
+    pincode: '',
+    country: '',
+    state: '',
+    phone: '',
+    type: 'home'
+  });
 
-    useEffect(() => {
-        const storedCartItems = JSON.parse(localStorage.getItem('cart-items')) || [];
-        setCartItems(storedCartItems);
+  useEffect(() => {
+    const storedCartItems = JSON.parse(localStorage.getItem('cart-items')) || [];
+    setCartItems(storedCartItems);
+    const storedAddress = JSON.parse(localStorage.getItem('selectedAddress')) || null;
+    setAddress(storedAddress);
 
-        const storedAddress = JSON.parse(localStorage.getItem('selectedAddress')) || null;
-        setAddress(storedAddress);
+    const fetchItemDetails = async () => {
+      const itemIds = storedCartItems.map(item => item.item_id);
+      const details = await Promise.all(
+        itemIds.map(id => axios.get(`http://localhost:3000/api/item/${id}`).then(res => res.data))
+      );
+      setItemsDetails(details);
+    };
 
-        const fetchItemDetails = async () => {
-            const itemIds = storedCartItems.map(item => item.item_id);
-            const details = await Promise.all(
-                itemIds.map(id => axios.get(`http://localhost:3000/api/item/${id}`).then(res => res.data))
-            );
-            setItemsDetails(details);
-        };
+    fetchItemDetails();
+  }, []);
 
-        fetchItemDetails();
-    }, []);
+  const handlePlaceOrder = async () => {
+    if (cartItems.length === 0) {
+      alert('Please select items to place an order.');
+      return;
+    }
 
+    const orderDate = new Date().toISOString();
+    const shippingAddress = address;
+    const orderStatus = 'placed';
+    const paymentStatus = paymentMethod;
 
-    const handlePlaceOrder = async () => {
-        const orderDate = new Date().toISOString(); 
-        const shippingAddress = address;
-        const orderStatus = 'placed';  
-        const paymentStatus = 'paid';
-      
-        const orderItems = cartItems.map(item => {
-          const itemDetails = itemsDetails.find(detail => detail.item_id === item.item_id);
-          return {
-            item_id: item.item_id,
-            item_quantity: item.quantity,
-            item_price: itemDetails ? itemDetails.selling_price : 0,
-            vendor_id: itemDetails ? itemDetails.vendor_id : null
-          };
-        });
-      
-        try {
-          for (const item of orderItems) {
-            // Step 1: Place Order
-            const orderRes = await axios.post('http://localhost:3000/api/order', {
-              customer_id: customer_id, 
-              order_date: orderDate,
-              order_status: orderStatus,
-              payment_status: paymentStatus,
-              shipping_address: JSON.stringify(shippingAddress),
-              shipping_id: null,
-              item_id: item.item_id,
-              item_quantity: item.item_quantity,
-              item_price: item.item_price,
-            });
-      
-            const order_id = orderRes.data.order_id;
-      
-            // Step 2: Record Payment Transaction
-            // await axios.post('http://localhost:3000/api/payment/record', {
-            //   order_id,
-            //   item_id: item.item_id,
-            //   vendor_id: item.vendor_id,
-            //   payment_amount: item.item_price,
-            //   payment_method: 'card',
-            //   status: 'paid'
-            // });
-          }
-      
-          alert('Order & payment recorded successfully!');
-          setCartItems([]);
-          localStorage.removeItem('cart-items');
-        } catch (error) {
-          console.error('Error placing order or recording payment:', error);
-          alert('There was an error placing the order. Please try again.');
-        }
+    const orderItems = cartItems.map(item => {
+      const itemDetails = itemsDetails.find(detail => detail.item_id === item.item_id);
+      return {
+        item_id: item.item_id,
+        item_quantity: item.quantity,
+        item_price: itemDetails ? itemDetails.selling_price : 0,
+        vendor_id: itemDetails ? itemDetails.vendor_id : null
       };
-      
-      
+    });
 
-    const handleStepClick = (stepNumber) => {
-        setExpandedStep(expandedStep === stepNumber ? null : stepNumber);
-    };
-    const renderCartItems = () => {
-        return cartItems.map(item => {
-            const itemDetails = itemsDetails.find(detail => detail.item_id === item.item_id);
-            if (!itemDetails) return null;
-    
-            return (
-                <div key={item.item_id} style={styles.cartItem}>
-                    <img src={itemDetails.imageURL} alt={itemDetails.name} style={styles.cartItemImage} />
-                    <div style={styles.cartItemDetails}>
-                        <p style={styles.cartItemName}>{itemDetails.name}</p>
-                        <p style={styles.cartItemInfo}>Brand: {itemDetails.brand}</p>
-                        <p style={styles.cartItemInfo}>Size: {itemDetails.size}</p>
-                        <p style={styles.cartItemInfo}>Color: {itemDetails.color}</p>
-                        <p style={styles.cartItemPrice}>${itemDetails.selling_price}</p>
-                        
-                        {/* Quantity Control */}
-                        <div>
-                            <button
-                                onClick={(e) => {
-                                    e.stopPropagation();
-                                    handleReduceQuantity(item.item_id);
-                                }}
-                            >
-                                -
-                            </button>
-                            <span style={{ margin: '0 10px' }}>
-                                {item.quantity}
-                            </span>
-                            <button
-                                onClick={(e) => {
-                                    e.stopPropagation();
-                                    handleAddToCart(itemDetails);
-                                }}
-                            >
-                                +
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            );
+    try {
+      for (const item of orderItems) {
+        await axios.post('http://localhost:3000/api/order', {
+          customer_id: customer_id,
+          order_date: orderDate,
+          order_status: orderStatus,
+          payment_status: paymentStatus,
+          shipping_address: JSON.stringify(shippingAddress),
+          shipping_id: null,
+          item_id: item.item_id,
+          item_quantity: item.item_quantity,
+          item_price: item.item_price,
         });
-    };
-    
+      }
 
-    return (
-        <div style={styles.checkoutContainer}>
-            <div style={styles.checkoutSteps}>
-            {[1, 2, 3, 4].map(step => (
-                        <div
-                            key={step}
-                            style={{
-                                ...styles.step,
-                                ...(expandedStep === step ? styles.stepActive : {}),
-                            }}
-                            onClick={() => handleStepClick(step)}
-                        >
-                            <div style={{ display: 'flex', alignItems: 'center' }}>
-                                <div
-                                    style={{
-                                        ...styles.stepIcon,
-                                        ...(expandedStep > step ? styles.stepIconCompleted : {}),
-                                    }}
-                                >
-                                    {step}
-                                </div>
-                                <h2 style={styles.stepTitle}>
-                                    {/* Updated Titles for each Step */}
-                                    {step === 1 && "Review"}
-                                    {step === 2 && "Shipping Method"}
-                                    {step === 3 && "Payment Method"}
-                                    {step === 4 && "Shipping Address"}
-                                </h2>
-                            </div>
-                            <div style={expandedStep === step ? styles.expandedStepContent : styles.collapsedStepContent}>
-                                {step === 1 && (
-                                    <div>
-                                            {renderCartItems()}
-                                            <p>
-                                                <strong>Total: $
-                                                    {cartItems.reduce((total, item) => total + (itemsDetails.find(detail => detail.item_id === item.item_id)?.selling_price || 0) * item.quantity, 0)}
-                                                </strong>
-                                            </p>
-                                        </div>
-                                )}
-                                {step === 2 && <p>Standard Shipping - Free</p>}
-                                {step === 3 && <p>Payment method placeholder</p>}
-                                {step === 4 && (
-                                        <div>
-                                            {address ? (
-                                                <div>
-                                                    <p>{address.name}</p>
-                                                    <p>{address.addressLine1}</p>
-                                                    <p>{address.addressLine2}</p>
-                                                    <p>{address.region}, {address.state} {address.pincode}</p>
-                                                    <p>{address.country}</p>
-                                                </div>
-                                            ) : (
-                                            <p>No address selected</p>
-                                        )}
-                                </div>
-                                )}
-                            </div>
-                        </div>
-                    ))}
+      alert('Order placed successfully!');
+      setCartItems([]);
+      localStorage.removeItem('cart-items');
+    } catch (error) {
+      console.error('Order error:', error);
+      alert('There was an error placing the order. Please try again.');
+    }
+  };
 
+  const handleStepClick = (step) => {
+    setExpandedStep(expandedStep === step ? null : step);
+  };
+
+  const renderCartItems = () => (
+    cartItems.map(item => {
+      const itemDetails = itemsDetails.find(detail => detail.item_id === item.item_id);
+      if (!itemDetails) return null;
+      return (
+        <CartItem key={item.item_id}>
+          <img src={itemDetails.imageURL} alt={itemDetails.name} />
+          <div>
+            <p><strong>{itemDetails.name}</strong></p>
+            <p>Brand: {itemDetails.brand}</p>
+            <p>Size: {itemDetails.size}</p>
+            <p>Color: {itemDetails.color}</p>
+            <p>${itemDetails.selling_price}</p>
+            <div>
+              <button onClick={() => handleReduceQuantity(item.item_id)}>-</button>
+              <span style={{ margin: '0 10px' }}>{item.quantity}</span>
+              <button onClick={() => handleAddToCart(itemDetails)}>+</button>
             </div>
+          </div>
+        </CartItem>
+      );
+    })
+  );
 
-            <div style={styles.summary}>
-    <h3 style={styles.summaryTitle}>Order Summary</h3>
-    <div style={styles.summaryDetails}>
-        {cartItems.map(item => {
-            const itemDetails = itemsDetails.find(detail => detail.item_id === item.item_id);
-            return itemDetails ? (
-                <div key={item.item_id} style={{ display: 'flex', alignItems: 'center', marginBottom: '15px' }}>
-                    <img src={itemDetails.imageURL} alt={itemDetails.name} style={{ width: '50px', height: '50px', marginRight: '10px' }} />
-                    <div style={{ flex: 1 }}>
-                        <p style={styles.cartItemName}>{itemDetails.name}</p>
-                        <p style={styles.cartItemInfo}>Quantity: {item.quantity}</p>
-                        <p style={styles.cartItemInfo}>Price: ${itemDetails.selling_price}</p>
+  const handleAddressSubmit = (e) => {
+    e.preventDefault();
+    setAddress(newAddress);
+    localStorage.setItem('selectedAddress', JSON.stringify(newAddress));
+    setShowModal(false);
+  };
+
+  const total = cartItems.reduce((total, item) => total + (itemsDetails.find(d => d.item_id === item.item_id)?.selling_price || 0) * item.quantity, 0);
+
+  return (
+    <Wrapper>
+      <Steps>
+        {[1, 2, 3].map(step => (
+          <Step key={step} active={expandedStep === step} onClick={() => handleStepClick(step)}>
+            <div className="header">{['Review & Total', 'Shipping Address', 'Select Payment Method'][step - 1]}</div>
+            <div className="content">
+              {step === 1 && <>{renderCartItems()}<p><strong>Total: ${total}</strong> (Free Shipping)</p></>}
+              {step === 2 && (
+                <div>
+                  <AddressHeader>
+                    <h4>Selected Address</h4>
+                    <AddNewLink as="button" onClick={() => setShowModal(true)}>+ Add New Address</AddNewLink>
+                  </AddressHeader>
+                  {address ? (
+                    <div>
+                      <p>{address.name}</p>
+                      <p>{address.addressLine1}</p>
+                      <p>{address.pincode}</p>
+                      <p>{address.state}, {address.country}</p>
+                      <p>{address.phone}</p>
                     </div>
+                  ) : <p>No address selected</p>}
                 </div>
-            ) : null;
-        })}
-        <p style={styles.summaryDetailsParagraph}><strong>Subtotal:</strong> $
-            {cartItems.reduce((total, item) => total + (itemsDetails.find(detail => detail.item_id === item.item_id)?.selling_price || 0) * item.quantity, 0)}
-        </p>
-        <p style={styles.summaryDetailsParagraph}><strong>Shipping:</strong> Free</p>
-        <p style={styles.summaryDetailsParagraph}><strong>Estimated Tax:</strong> $0.00</p>
-        <p style={styles.summaryDetailsParagraph}><strong>Total:</strong> $
-            {cartItems.reduce((total, item) => total + (itemsDetails.find(detail => detail.item_id === item.item_id)?.selling_price || 0) * item.quantity, 0)}
-        </p>
-        <button
-                                                style={styles.placeOrderBtn}
-                                                onClick={handlePlaceOrder}
-                                            >
-                                                Place Order
-                                            </button>
-    </div>
-</div>
+              )}
+              {step === 3 && (
+                <PaymentOptions>
+                  <label><input type="radio" name="payment" value="paypal" checked={paymentMethod === 'paypal'} onChange={() => setPaymentMethod('paypal')} /> 🅿️ PayPal</label>
+                  <label><input type="radio" name="payment" value="cod" checked={paymentMethod === 'cod'} onChange={() => setPaymentMethod('cod')} /> 💵 Cash on Delivery</label>
+                  <label><input type="radio" name="payment" value="card" checked={paymentMethod === 'card'} onChange={() => setPaymentMethod('card')} /> 💳 Card</label>
+                </PaymentOptions>
+              )}
+            </div>
+          </Step>
+        ))}
+      </Steps>
 
-        </div>
-    );
+      <Summary>
+        <h3>Order Summary</h3>
+        {cartItems.map(item => {
+          const itemDetails = itemsDetails.find(detail => detail.item_id === item.item_id);
+          return itemDetails ? (
+            <div key={item.item_id}>
+              <p>{itemDetails.name} x {item.quantity}</p>
+              <p>${itemDetails.selling_price}</p>
+            </div>
+          ) : null;
+        })}
+        <p><strong>Subtotal:</strong> ${total}</p>
+        <p><strong>Shipping:</strong> Free</p>
+        <p><strong>Total:</strong> ${total}</p>
+        <button onClick={handlePlaceOrder}>Place Order</button>
+      </Summary>
+
+      {showModal && (
+        <ModalOverlay>
+          <ModalContent>
+            <h3>Add New Address</h3>
+            <form onSubmit={handleAddressSubmit}>
+              <input placeholder="Name" value={newAddress.name} onChange={e => setNewAddress({ ...newAddress, name: e.target.value })} required />
+              <input placeholder="Street Address" value={newAddress.addressLine1} onChange={e => setNewAddress({ ...newAddress, addressLine1: e.target.value })} required />
+              <input placeholder="Pincode" value={newAddress.pincode} onChange={e => setNewAddress({ ...newAddress, pincode: e.target.value })} required />
+              <input placeholder="Country" value={newAddress.country} onChange={e => setNewAddress({ ...newAddress, country: e.target.value })} required />
+              <input placeholder="State" value={newAddress.state} onChange={e => setNewAddress({ ...newAddress, state: e.target.value })} required />
+              <input placeholder="Phone Number" value={newAddress.phone} onChange={e => setNewAddress({ ...newAddress, phone: e.target.value })} required />
+              <label><input type="radio" name="type" value="home" checked={newAddress.type === 'home'} onChange={() => setNewAddress({ ...newAddress, type: 'home' })} /> Home</label>
+              <label><input type="radio" name="type" value="office" checked={newAddress.type === 'office'} onChange={() => setNewAddress({ ...newAddress, type: 'office' })} /> Office</label>
+              <button type="submit">Save Address</button>
+            </form>
+            <button onClick={() => setShowModal(false)}>Close</button>
+          </ModalContent>
+        </ModalOverlay>
+      )}
+    </Wrapper>
+  );
 };
 
 export default Checkout;
+
+const Wrapper = styled.div` display: flex; gap: 40px; padding: 40px; background: ${COLORS.background}; font-family: Arial, sans-serif; `;
+const Steps = styled.div` flex: 2; `;
+const Step = styled.div`
+  background: ${COLORS.cardBackground};
+  margin-bottom: 20px;
+  padding: 20px;
+  border-radius: 10px;
+  box-shadow: 0 4px 8px ${COLORS.cardShadow};
+  .header { font-size: 18px; font-weight: bold; color: ${COLORS.text}; }
+  .content { margin-top: 10px; display: ${props => (props.active ? 'block' : 'none')}; }
+`;
+const CartItem = styled.div`
+  display: flex;
+  gap: 20px;
+  margin-bottom: 15px;
+  img { width: 100px; height: 100px; object-fit: cover; border-radius: 8px; }
+`;
+const Summary = styled.div`
+  flex: 1;
+  background: ${COLORS.cardBackground};
+  padding: 20px;
+  border-radius: 10px;
+  box-shadow: 0 4px 8px ${COLORS.cardShadow};
+  button {
+    margin-top: 20px;
+    background: ${COLORS.button};
+    color: ${COLORS.buttonText};
+    padding: 12px 20px;
+    border: none;
+    border-radius: 8px;
+    font-size: 16px;
+    cursor: pointer;
+  }
+`;
+const AddressHeader = styled.div`
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  h4 { margin: 0; font-size: 16px; font-weight: bold; }
+`;
+const AddNewLink = styled.a`
+  font-size: 14px;
+  text-decoration: none;
+  color: ${COLORS.button};
+  font-weight: bold;
+  cursor: pointer;
+`;
+const PaymentOptions = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 10px;
+  label {
+    font-size: 16px;
+    color: ${COLORS.text};
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+`;
+const ModalOverlay = styled.div`
+  position: fixed;
+  top: 0;
+  left: 0;
+  height: 100vh;
+  width: 100vw;
+  background: rgba(0,0,0,0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+`;
+const ModalContent = styled.div`
+  background: white;
+  padding: 30px;
+  border-radius: 12px;
+  max-width: 500px;
+  width: 100%;
+  form {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    input { padding: 10px; border: 1px solid #ccc; border-radius: 6px; }
+    label { font-size: 14px; }
+    button { background: ${COLORS.button}; color: white; padding: 10px; border: none; border-radius: 6px; }
+  }
+`;

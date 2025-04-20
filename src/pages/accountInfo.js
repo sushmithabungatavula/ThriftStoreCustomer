@@ -1,3 +1,4 @@
+// AccountInfo page styled to match Login Page UI
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { Form, Button, Container, Row, Col, Card } from 'react-bootstrap';
@@ -41,22 +42,20 @@ const AccountInfo = () => {
   };
 
   return (
-    <Container className="my-5">
+    <Container style={{ fontFamily: 'Arial, sans-serif', padding: '40px', maxWidth: '800px', backgroundColor: '#ffffff', borderRadius: '16px', boxShadow: '0 4px 12px rgba(0,0,0,0.05)' }}>
       <Row className="justify-content-center">
-        <Col xs={12} md={8} lg={6}>
-          <h2 className="text-center mb-4">Account Information</h2>
-          <Card className="shadow-sm mb-4">
+        <Col xs={12}>
+          <h2 style={{ fontWeight: 'bold', marginBottom: '30px', color: '#1e1e1e' }}>Account Information</h2>
+
+          <Card style={{ marginBottom: '24px', border: '1px solid #ddd', borderRadius: '12px' }}>
             <Card.Body>
-              <Card.Title className="d-flex justify-content-between align-items-center">
+              <Card.Title style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '16px' }}>
                 Personal Information
-                <FaEdit
-                  style={{ cursor: 'pointer', color: '#007bff' }}
-                  onClick={() => setEditMode(true)}
-                />
+                <FaEdit style={{ cursor: 'pointer', color: '#000' }} onClick={() => setEditMode(true)} />
               </Card.Title>
               {editMode ? (
-                <Form>
-                  <Form.Group controlId="formUsername" className="mb-3">
+                <Form style={{ marginTop: '20px' }}>
+                  <Form.Group className="mb-3">
                     <Form.Label>Username</Form.Label>
                     <Form.Control
                       type="text"
@@ -64,10 +63,10 @@ const AccountInfo = () => {
                       value={loginCredits.username || ''}
                       onChange={handleInputChange}
                       placeholder="Enter your username"
-                      className="rounded-0"
+                      style={{ borderRadius: '8px' }}
                     />
                   </Form.Group>
-                  <Form.Group controlId="formName" className="mb-3">
+                  <Form.Group className="mb-3">
                     <Form.Label>Name</Form.Label>
                     <Form.Control
                       type="text"
@@ -75,10 +74,10 @@ const AccountInfo = () => {
                       value={userData.name || ''}
                       onChange={handleInputChange}
                       placeholder="Enter your name"
-                      className="rounded-0"
+                      style={{ borderRadius: '8px' }}
                     />
                   </Form.Group>
-                  <Form.Group controlId="formContact" className="mb-3">
+                  <Form.Group className="mb-3">
                     <Form.Label>Contact</Form.Label>
                     <Form.Control
                       type="text"
@@ -86,15 +85,15 @@ const AccountInfo = () => {
                       value={userData.contactNumber || ''}
                       onChange={handleInputChange}
                       placeholder="Enter your contact number"
-                      className="rounded-0"
+                      style={{ borderRadius: '8px' }}
                     />
                   </Form.Group>
-                  <Button variant="primary" onClick={handleSave} className="w-100 rounded-0">
+                  <Button variant="dark" onClick={handleSave} style={{ width: '100%', borderRadius: '10px', fontWeight: 'bold' }}>
                     Save
                   </Button>
                 </Form>
               ) : (
-                <div className="mt-3">
+                <div style={{ marginTop: '20px', fontSize: '14px', color: '#444' }}>
                   <p><strong>Username:</strong> {loginCredits.username}</p>
                   <p><strong>Name:</strong> {userData.name}</p>
                   <p><strong>Contact:</strong> {userData.contactNumber}</p>
@@ -103,9 +102,9 @@ const AccountInfo = () => {
             </Card.Body>
           </Card>
 
-          <Card className="shadow-sm">
+          <Card style={{ border: '1px solid #ddd', borderRadius: '12px' }}>
             <Card.Body>
-              <Card.Title>Account Balance</Card.Title>
+              <Card.Title style={{ fontSize: '16px' }}>Account Balance</Card.Title>
               <p><strong>Wallet Balance:</strong> {userData.wallet}</p>
               <p><strong>Green Points:</strong> {userData.greenpoints}</p>
             </Card.Body>
@@ -117,4 +116,3 @@ const AccountInfo = () => {
 };
 
 export default AccountInfo;
-

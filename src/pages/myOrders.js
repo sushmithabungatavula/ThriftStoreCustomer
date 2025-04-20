@@ -116,7 +116,7 @@ const MyOrders = () => {
     }
 
     try {
-      const response = await axios.get(`http://localhost:3000/api/orders/${customer_id}`);
+      const response = await axios.get(`http://localhost:3000/api/ordersByCustomer/${customer_id}`);
       const groupedOrders = response.data;
 
       if (typeof groupedOrders === 'object') {

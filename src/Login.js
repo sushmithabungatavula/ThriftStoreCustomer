@@ -36,13 +36,19 @@ const Login = () => {
     e.preventDefault();
     try {
       const response = await axios.post('http://localhost:3000/api/login', { email, password });
-      const { token, customer_id, cartId, wishlistId } = response.data;
+      const { token ,customer_id, cartId, wishlistId, addressID1,addressID2,addressID3,addressID4 } = response.data;
       localStorage.setItem('customerId', customer_id);
       localStorage.setItem('wishlistId', wishlistId);
       localStorage.setItem('cartId', cartId);
       localStorage.setItem('token', token);
+      localStorage.setItem('email', email);
+      localStorage.setItem('addressID1', addressID1);
+      localStorage.setItem('addressID2', addressID2);
+      localStorage.setItem('addressID3', addressID3);
+      localStorage.setItem('addressID4', addressID4);
       setCartId(cartId);
       setIsLoggedIn(true);
+      navigate('/EcommerceHome');
     } catch (error) {
       if (error.response?.status === 401) {
         alert('Wrong password. Please try again.');
@@ -69,7 +75,8 @@ const Login = () => {
     try {
       const response = await axios.post('http://localhost:3000/api/signup', user);
       if (response.status === 201) {
-        alert('Signup successful! Please log in.');
+        navigate('/EcommerceHome');
+        alert('Signup successful!');
         setShowSignUp(false);
       }
     } catch (error) {

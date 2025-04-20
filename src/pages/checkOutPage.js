@@ -1,34 +1,54 @@
-// Checkout with address modal form for new address
+/* Checkout page with polished Shipping‑Address UI + modals */
 import React, { useEffect, useState, useContext } from 'react';
 import axios from 'axios';
-import styled from 'styled-components';
+import styled, { css } from 'styled-components';
+import { useNavigate } from 'react-router-dom';
+import { List } from 'antd';
 import { LoginContext } from '../context/LoginContext';
 
+/* ---------- theme ---------- */
 const COLORS = {
-  background: '#ffffff',
-  text: '#1e1e1e',
-  inputBorder: '#cccccc',
-  divider: '#888888',
-  button: '#000000',
-  buttonText: '#ffffff',
-  cardBackground: '#ffffff',
-  cardShadow: 'rgba(0, 0, 0, 0.1)'
+  background: '#fafafa',
+  text: '#222',
+  muted: '#666',
+  primary: '#111',
+  primaryLight: '#222',
+  primaryText: '#fff',
+  border: '#e0e0e0',
+  card: '#fff',
+  cardShadow: 'rgba(0,0,0,0.08)',
+  accent: '#2196f3',
+  successBg: '#e8f5e9',
 };
 
+/* ---------- utils ---------- */
+const SLOT_KEYS = ['addressID1', 'addressID2', 'addressID3', 'addressID4'];
+
+/* =================================================================== */
+/*                         COMPONENT                                   */
+/* =================================================================== */
 const Checkout = () => {
+  /* ───────────────── context ───────────────── */
   const {
     cartItems,
     setCartItems,
     handleAddToCart,
     handleReduceQuantity,
-    customer_id
+    customer_id,
   } = useContext(LoginContext);
 
-  const [address, setAddress] = useState(null);
+  /* ───────────────── state ───────────────── */
+  const [selectedAddress, setSelectedAddress] = useState(null);
+  const [addresses, setAddresses] = useState([]);
   const [itemsDetails, setItemsDetails] = useState([]);
   const [expandedStep, setExpandedStep] = useState(1);
   const [paymentMethod, setPaymentMethod] = useState('cod');
-  const [showModal, setShowModal] = useState(false);
+
+  const [showAddrModal, setShowAddrModal] = useState(false);
+  const [chosenAddrId, setChosenAddrId] = useState(null);
+
+  /* modal for new quick address (kept for backward compat) */
+  const [showNewAddrModal, setShowNewAddrModal] = useState(false);
   const [newAddress, setNewAddress] = useState({
     name: '',
     addressLine1: '',
@@ -36,179 +56,311 @@ const Checkout = () => {
     country: '',
     state: '',
     phone: '',
-    type: 'home'
+    type: 'home',
   });
 
+  const nav = useNavigate();
+
+  /* ───────────────── mount ­─ load cart & addresses ───────────────── */
   useEffect(() => {
-    const storedCartItems = JSON.parse(localStorage.getItem('cart-items')) || [];
-    setCartItems(storedCartItems);
-    const storedAddress = JSON.parse(localStorage.getItem('selectedAddress')) || null;
-    setAddress(storedAddress);
+    /* cart items */
+    const storedCart = JSON.parse(localStorage.getItem('cart-items')) || [];
+    setCartItems(storedCart);
 
-    const fetchItemDetails = async () => {
-      const itemIds = storedCartItems.map(item => item.item_id);
-      const details = await Promise.all(
-        itemIds.map(id => axios.get(`http://localhost:3000/api/item/${id}`).then(res => res.data))
+    /* address slots */
+    (async () => {
+      const list = await Promise.all(
+        SLOT_KEYS.map(async (key) => {
+          const id = localStorage.getItem(key);
+          if (!id) return null;
+          try {
+            const { data } = await axios.get(
+              `http://localhost:3000/api/address/${id}`
+            );
+            return data;
+          } catch {
+            return null;
+          }
+        })
       );
-      setItemsDetails(details);
-    };
+      const validAddrs = list.filter(Boolean);
+      setAddresses(validAddrs);
 
-    fetchItemDetails();
+      /* default selection */
+      const savedId =
+        localStorage.getItem('selectedDeliveryAddress') ||
+        (validAddrs[0]?.addressId ?? null);
+
+      if (savedId) {
+        const obj = validAddrs.find((a) => a.addressId === Number(savedId));
+        if (obj) {
+          setSelectedAddress(obj);
+          setChosenAddrId(obj.addressId);
+          localStorage.setItem('selectedDeliveryAddress', obj.addressId);
+          localStorage.setItem('selectedAddress', JSON.stringify(obj));
+        }
+      }
+    })();
   }, []);
 
+  /* ───────────────── item details whenever cart changes ───────────────── */
+  useEffect(() => {
+    const fetchDetails = async () => {
+      const ids = cartItems.map((i) => i.item_id);
+      if (!ids.length) return;
+      const result = await Promise.all(
+        ids.map((id) =>
+          axios.get(`http://localhost:3000/api/item/${id}`).then((r) => r.data)
+        )
+      );
+      setItemsDetails(result);
+    };
+    fetchDetails();
+  }, [cartItems]);
+
+  /* ───────────────── helpers ───────────────── */
+  const cartTotal = cartItems.reduce(
+    (sum, ci) =>
+      sum +
+      (itemsDetails.find((d) => d.item_id === ci.item_id)?.selling_price || 0) *
+        ci.quantity,
+    0
+  );
+  const toggleStep = (i) => setExpandedStep(expandedStep === i ? null : i);
+
+  /* ───────────────── order handler ───────────────── */
   const handlePlaceOrder = async () => {
-    if (cartItems.length === 0) {
-      alert('Please select items to place an order.');
-      return;
-    }
+    if (!cartItems.length) return alert('Cart is empty.');
+    if (!selectedAddress) return alert('Select a shipping address.');
 
     const orderDate = new Date().toISOString();
-    const shippingAddress = address;
-    const orderStatus = 'placed';
-    const paymentStatus = paymentMethod;
-
-    const orderItems = cartItems.map(item => {
-      const itemDetails = itemsDetails.find(detail => detail.item_id === item.item_id);
+    const orderItems = cartItems.map((ci) => {
+      const d = itemsDetails.find((x) => x.item_id === ci.item_id);
       return {
-        item_id: item.item_id,
-        item_quantity: item.quantity,
-        item_price: itemDetails ? itemDetails.selling_price : 0,
-        vendor_id: itemDetails ? itemDetails.vendor_id : null
+        item_id: ci.item_id,
+        item_quantity: ci.quantity,
+        item_price: d?.selling_price || 0,
+        vendor_id: d?.vendor_id || null,
       };
     });
 
     try {
       for (const item of orderItems) {
         await axios.post('http://localhost:3000/api/order', {
-          customer_id: customer_id,
+          customer_id,
           order_date: orderDate,
-          order_status: orderStatus,
-          payment_status: paymentStatus,
-          shipping_address: JSON.stringify(shippingAddress),
+          order_status: 'placed',
+          payment_status: paymentMethod,
+          shipping_address: JSON.stringify(selectedAddress),
           shipping_id: null,
-          item_id: item.item_id,
-          item_quantity: item.item_quantity,
-          item_price: item.item_price,
+          ...item,
         });
       }
-
-      alert('Order placed successfully!');
+      alert('Order placed!');
       setCartItems([]);
       localStorage.removeItem('cart-items');
-    } catch (error) {
-      console.error('Order error:', error);
-      alert('There was an error placing the order. Please try again.');
+    } catch (e) {
+      console.error(e);
+      alert('Could not place order.');
     }
   };
 
-  const handleStepClick = (step) => {
-    setExpandedStep(expandedStep === step ? null : step);
-  };
-
-  const renderCartItems = () => (
-    cartItems.map(item => {
-      const itemDetails = itemsDetails.find(detail => detail.item_id === item.item_id);
-      if (!itemDetails) return null;
-      return (
-        <CartItem key={item.item_id}>
-          <img src={itemDetails.imageURL} alt={itemDetails.name} />
-          <div>
-            <p><strong>{itemDetails.name}</strong></p>
-            <p>Brand: {itemDetails.brand}</p>
-            <p>Size: {itemDetails.size}</p>
-            <p>Color: {itemDetails.color}</p>
-            <p>${itemDetails.selling_price}</p>
-            <div>
-              <button onClick={() => handleReduceQuantity(item.item_id)}>-</button>
-              <span style={{ margin: '0 10px' }}>{item.quantity}</span>
-              <button onClick={() => handleAddToCart(itemDetails)}>+</button>
-            </div>
-          </div>
-        </CartItem>
-      );
-    })
-  );
-
-  const handleAddressSubmit = (e) => {
-    e.preventDefault();
-    setAddress(newAddress);
-    localStorage.setItem('selectedAddress', JSON.stringify(newAddress));
-    setShowModal(false);
-  };
-
-  const total = cartItems.reduce((total, item) => total + (itemsDetails.find(d => d.item_id === item.item_id)?.selling_price || 0) * item.quantity, 0);
-
+  /* =================================================================== */
+  /*                               JSX                                   */
+  /* =================================================================== */
   return (
     <Wrapper>
+      {/* --------------- STEPS --------------- */}
       <Steps>
-        {[1, 2, 3].map(step => (
-          <Step key={step} active={expandedStep === step} onClick={() => handleStepClick(step)}>
-            <div className="header">{['Review & Total', 'Shipping Address', 'Select Payment Method'][step - 1]}</div>
-            <div className="content">
-              {step === 1 && <>{renderCartItems()}<p><strong>Total: ${total}</strong> (Free Shipping)</p></>}
-              {step === 2 && (
-                <div>
-                  <AddressHeader>
-                    <h4>Selected Address</h4>
-                    <AddNewLink as="button" onClick={() => setShowModal(true)}>+ Add New Address</AddNewLink>
-                  </AddressHeader>
-                  {address ? (
-                    <div>
-                      <p>{address.name}</p>
-                      <p>{address.addressLine1}</p>
-                      <p>{address.pincode}</p>
-                      <p>{address.state}, {address.country}</p>
-                      <p>{address.phone}</p>
-                    </div>
-                  ) : <p>No address selected</p>}
-                </div>
+        {/* === STEP 1 – Review === */}
+        <Step active={expandedStep === 1} onClick={() => toggleStep(1)}>
+          <StepHeader>Review & Total</StepHeader>
+          <StepContent>
+            {cartItems.map((ci) => {
+              const d = itemsDetails.find((x) => x.item_id === ci.item_id);
+              if (!d) return null;
+              return (
+                <CartItem key={ci.item_id}>
+                  <ItemImg src={d.imageURL} alt={d.name} />
+                  <div>
+                    <ItemTitle>{d.name}</ItemTitle>
+                    <Mini muted>{d.brand}</Mini>
+                    <Mini muted>
+                      {d.size} / {d.color}
+                    </Mini>
+                    <Price>${d.selling_price}</Price>
+                    <QtyBox>
+                      <QtyBtn onClick={() => handleReduceQuantity(ci.item_id)}>
+                        –
+                      </QtyBtn>
+                      <Qty>{ci.quantity}</Qty>
+                      <QtyBtn onClick={() => handleAddToCart(d)}>+</QtyBtn>
+                    </QtyBox>
+                  </div>
+                </CartItem>
+              );
+            })}
+            <TotalLine>
+              <b>Total:</b> ${cartTotal} &nbsp;
+              <span style={{ color: COLORS.muted }}>(Free Shipping)</span>
+            </TotalLine>
+          </StepContent>
+        </Step>
+
+        {/* === STEP 2 – Shipping address === */}
+        <Step active={expandedStep === 2} onClick={() => toggleStep(2)}>
+          <StepHeader>Shipping Address</StepHeader>
+          <StepContent>
+            <AddressHeader>
+              <h4>Delivery Address</h4>
+              {addresses.length > 0 && (
+                <ChangeBtn onClick={() => setShowAddrModal(true)}>
+                  Change
+                </ChangeBtn>
               )}
-              {step === 3 && (
-                <PaymentOptions>
-                  <label><input type="radio" name="payment" value="paypal" checked={paymentMethod === 'paypal'} onChange={() => setPaymentMethod('paypal')} /> 🅿️ PayPal</label>
-                  <label><input type="radio" name="payment" value="cod" checked={paymentMethod === 'cod'} onChange={() => setPaymentMethod('cod')} /> 💵 Cash on Delivery</label>
-                  <label><input type="radio" name="payment" value="card" checked={paymentMethod === 'card'} onChange={() => setPaymentMethod('card')} /> 💳 Card</label>
-                </PaymentOptions>
-              )}
-            </div>
-          </Step>
-        ))}
+            </AddressHeader>
+
+            {selectedAddress ? (
+              <SelectedAddressCard>
+                <NameLine>{selectedAddress.name}</NameLine>
+                <AddrLine>{selectedAddress.addressLine1}</AddrLine>
+                <AddrLine>{selectedAddress.pincode}</AddrLine>
+                <AddrLine>
+                  {selectedAddress.state}, {selectedAddress.country}
+                </AddrLine>
+                {selectedAddress.phone && (
+                  <Mini muted>{selectedAddress.phone}</Mini>
+                )}
+              </SelectedAddressCard>
+            ) : (
+              <Mini>No address selected</Mini>
+            )}
+          </StepContent>
+        </Step>
+
+        {/* === STEP 3 – Payment === */}
+        <Step active={expandedStep === 3} onClick={() => toggleStep(3)}>
+          <StepHeader>Select Payment Method</StepHeader>
+          <StepContent>
+            <PaymentOptions>
+              {[
+                ['paypal', '🅿️ PayPal'],
+                ['cod', '💵 Cash on Delivery'],
+                ['card', '💳 Debit / Credit Card'],
+              ].map(([val, label]) => (
+                <label key={val}>
+                  <input
+                    type="radio"
+                    value={val}
+                    checked={paymentMethod === val}
+                    onChange={() => setPaymentMethod(val)}
+                  />
+                  {label}
+                </label>
+              ))}
+            </PaymentOptions>
+          </StepContent>
+        </Step>
       </Steps>
 
-      <Summary>
-        <h3>Order Summary</h3>
-        {cartItems.map(item => {
-          const itemDetails = itemsDetails.find(detail => detail.item_id === item.item_id);
-          return itemDetails ? (
-            <div key={item.item_id}>
-              <p>{itemDetails.name} x {item.quantity}</p>
-              <p>${itemDetails.selling_price}</p>
-            </div>
-          ) : null;
+      {/* --------------- SUMMARY --------------- */}
+      <SummaryCard>
+        <h3>Order Summary</h3>
+        {cartItems.map((ci) => {
+          const d = itemsDetails.find((x) => x.item_id === ci.item_id);
+          if (!d) return null;
+          return (
+            <SummaryRow key={ci.item_id}>
+              <span>
+                {d.name} × {ci.quantity}
+              </span>
+              <span>${d.selling_price}</span>
+            </SummaryRow>
+          );
         })}
-        <p><strong>Subtotal:</strong> ${total}</p>
-        <p><strong>Shipping:</strong> Free</p>
-        <p><strong>Total:</strong> ${total}</p>
-        <button onClick={handlePlaceOrder}>Place Order</button>
-      </Summary>
+        <Divider />
+        <SummaryRow>
+          <b>Subtotal</b> <b>${cartTotal}</b>
+        </SummaryRow>
+        <SummaryRow>
+          <span>Shipping</span> <span>Free</span>
+        </SummaryRow>
+        <SummaryRow big>
+          <b>Total</b> <b>${cartTotal}</b>
+        </SummaryRow>
+        <PrimaryBtn onClick={handlePlaceOrder}>Place Order</PrimaryBtn>
+      </SummaryCard>
 
-      {showModal && (
+      {/* --------------- CHANGE‑ADDRESS MODAL --------------- */}
+      {showAddrModal && (
         <ModalOverlay>
-          <ModalContent>
-            <h3>Add New Address</h3>
-            <form onSubmit={handleAddressSubmit}>
-              <input placeholder="Name" value={newAddress.name} onChange={e => setNewAddress({ ...newAddress, name: e.target.value })} required />
-              <input placeholder="Street Address" value={newAddress.addressLine1} onChange={e => setNewAddress({ ...newAddress, addressLine1: e.target.value })} required />
-              <input placeholder="Pincode" value={newAddress.pincode} onChange={e => setNewAddress({ ...newAddress, pincode: e.target.value })} required />
-              <input placeholder="Country" value={newAddress.country} onChange={e => setNewAddress({ ...newAddress, country: e.target.value })} required />
-              <input placeholder="State" value={newAddress.state} onChange={e => setNewAddress({ ...newAddress, state: e.target.value })} required />
-              <input placeholder="Phone Number" value={newAddress.phone} onChange={e => setNewAddress({ ...newAddress, phone: e.target.value })} required />
-              <label><input type="radio" name="type" value="home" checked={newAddress.type === 'home'} onChange={() => setNewAddress({ ...newAddress, type: 'home' })} /> Home</label>
-              <label><input type="radio" name="type" value="office" checked={newAddress.type === 'office'} onChange={() => setNewAddress({ ...newAddress, type: 'office' })} /> Office</label>
-              <button type="submit">Save Address</button>
-            </form>
-            <button onClick={() => setShowModal(false)}>Close</button>
-          </ModalContent>
+          <ModalBox>
+            <ModalTitle>Select Delivery Address</ModalTitle>
+            {addresses.length ? (
+              <List
+                dataSource={addresses}
+                rowKey={(a) => a.addressId}
+                renderItem={(a) => (
+                  <AddrCard
+                    selected={chosenAddrId === a.addressId}
+                    onClick={() => setChosenAddrId(a.addressId)}
+                  >
+                    <input
+                      type="radio"
+                      checked={chosenAddrId === a.addressId}
+                      readOnly
+                    />
+                    <div>
+                      <NameLine>{a.name}</NameLine>
+                      <Mini>{a.addressLine1}</Mini>
+                      <Mini>
+                        {a.state}, {a.country} – {a.pincode}
+                      </Mini>
+                    </div>
+                  </AddrCard>
+                )}
+              />
+            ) : (
+              <Mini>No saved addresses.</Mini>
+            )}
+
+            <ModalFooter>
+              <PrimaryBtn
+                disabled={!chosenAddrId}
+                onClick={() => {
+                  const obj = addresses.find(
+                    (x) => x.addressId === chosenAddrId
+                  );
+                  if (!obj) return;
+                  setSelectedAddress(obj);
+                  localStorage.setItem(
+                    'selectedDeliveryAddress',
+                    obj.addressId
+                  );
+                  localStorage.setItem('selectedAddress', JSON.stringify(obj));
+                  setShowAddrModal(false);
+                }}
+              >
+                Select
+              </PrimaryBtn>
+              <PlainBtn
+                onClick={() => {
+                  setShowAddrModal(false);
+                  nav('/location-picker');
+                }}
+              >
+                Add New
+              </PlainBtn>
+              <PlainBtn onClick={() => setShowAddrModal(false)}>Close</PlainBtn>
+            </ModalFooter>
+          </ModalBox>
+        </ModalOverlay>
+      )}
+
+      {/* quick‑add modal left intact (hidden behind showNewAddrModal) */}
+      {showNewAddrModal && (
+        <ModalOverlay>
+          <ModalBox>…</ModalBox>
         </ModalOverlay>
       )}
     </Wrapper>
@@ -217,90 +369,226 @@ const Checkout = () => {
 
 export default Checkout;
 
-const Wrapper = styled.div` display: flex; gap: 40px; padding: 40px; background: ${COLORS.background}; font-family: Arial, sans-serif; `;
-const Steps = styled.div` flex: 2; `;
-const Step = styled.div`
-  background: ${COLORS.cardBackground};
-  margin-bottom: 20px;
-  padding: 20px;
-  border-radius: 10px;
-  box-shadow: 0 4px 8px ${COLORS.cardShadow};
-  .header { font-size: 18px; font-weight: bold; color: ${COLORS.text}; }
-  .content { margin-top: 10px; display: ${props => (props.active ? 'block' : 'none')}; }
-`;
-const CartItem = styled.div`
+/* =================================================================== */
+/*                             STYLES                                  */
+/* =================================================================== */
+
+const Wrapper = styled.div`
   display: flex;
-  gap: 20px;
-  margin-bottom: 15px;
-  img { width: 100px; height: 100px; object-fit: cover; border-radius: 8px; }
+  gap: 40px;
+  padding: 40px;
+  background: ${COLORS.background};
+  font-family: Arial, sans-serif;
 `;
-const Summary = styled.div`
-  flex: 1;
-  background: ${COLORS.cardBackground};
-  padding: 20px;
-  border-radius: 10px;
-  box-shadow: 0 4px 8px ${COLORS.cardShadow};
-  button {
-    margin-top: 20px;
-    background: ${COLORS.button};
-    color: ${COLORS.buttonText};
-    padding: 12px 20px;
-    border: none;
-    border-radius: 8px;
-    font-size: 16px;
-    cursor: pointer;
+
+/* ---------- Left column ---------- */
+const Steps = styled.div`
+  flex: 2;
+`;
+const Step = styled.div`
+  background: ${COLORS.card};
+  margin-bottom: 24px;
+  border-radius: 14px;
+  padding: 22px 26px;
+  box-shadow: 0 4px 12px ${COLORS.cardShadow};
+  cursor: pointer;
+`;
+const StepHeader = styled.div`
+  font-size: 18px;
+  font-weight: 700;
+  color: ${COLORS.text};
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  &:after {
+    content: '▼';
+    font-size: 12px;
+    margin-left: auto;
+    transition: transform 0.2s;
+  }
+  ${Step}[active='true'] &::after {
+    transform: rotate(180deg);
   }
 `;
+const StepContent = styled.div`
+  margin-top: 14px;
+  display: ${(p) => (p.hidden ? 'none' : 'block')};
+`;
+
+/* ----- cart items ----- */
+const CartItem = styled.div`
+  display: flex;
+  gap: 18px;
+  margin-bottom: 18px;
+`;
+const ItemImg = styled.img`
+  width: 88px;
+  height: 88px;
+  object-fit: cover;
+  border-radius: 10px;
+`;
+const ItemTitle = styled.p`
+  margin: 0 0 4px;
+  font-weight: 600;
+`;
+const Mini = styled.p`
+  margin: 0;
+  font-size: 13px;
+  color: ${(p) => (p.muted ? COLORS.muted : COLORS.text)};
+`;
+const Price = styled(Mini)`
+  font-weight: bold;
+`;
+const QtyBox = styled.div`
+  margin-top: 6px;
+  display: flex;
+  align-items: center;
+`;
+const QtyBtn = styled.button`
+  border: 1px solid ${COLORS.border};
+  background: ${COLORS.card};
+  width: 26px;
+  height: 26px;
+  cursor: pointer;
+`;
+const Qty = styled.span`
+  width: 26px;
+  text-align: center;
+`;
+const TotalLine = styled.p`
+  border-top: 1px dashed ${COLORS.border};
+  padding-top: 10px;
+`;
+
+/* ----- shipping address visuals ----- */
 const AddressHeader = styled.div`
   display: flex;
   justify-content: space-between;
   align-items: center;
-  h4 { margin: 0; font-size: 16px; font-weight: bold; }
-`;
-const AddNewLink = styled.a`
-  font-size: 14px;
-  text-decoration: none;
-  color: ${COLORS.button};
-  font-weight: bold;
-  cursor: pointer;
-`;
-const PaymentOptions = styled.div`
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  margin-top: 10px;
-  label {
+  margin-bottom: 8px;
+  h4 {
+    margin: 0;
     font-size: 16px;
-    color: ${COLORS.text};
-    display: flex;
-    align-items: center;
-    gap: 10px;
+    font-weight: 700;
   }
 `;
+const ChangeBtn = styled.button`
+  background: none;
+  border: none;
+  color: ${COLORS.accent};
+  font-weight: 600;
+  cursor: pointer;
+`;
+const SelectedAddressCard = styled.div`
+  border: 1px solid ${COLORS.border};
+  border-left: 4px solid ${COLORS.accent};
+  padding: 14px 18px;
+  border-radius: 10px;
+  background: ${COLORS.card};
+`;
+const NameLine = styled.p`
+  margin: 0 0 4px;
+  font-weight: 600;
+`;
+const AddrLine = styled(Mini)``;
+
+/* ---------- Right column ---------- */
+const SummaryCard = styled.div`
+  flex: 1;
+  background: ${COLORS.card};
+  border-radius: 14px;
+  padding: 26px 30px;
+  box-shadow: 0 4px 12px ${COLORS.cardShadow};
+`;
+const SummaryRow = styled.div`
+  display: flex;
+  justify-content: space-between;
+  font-size: ${(p) => (p.big ? '17px' : '14px')};
+  margin: 4px 0;
+`;
+const Divider = styled.hr`
+  border: none;
+  border-top: 1px solid ${COLORS.border};
+  margin: 14px 0 10px;
+`;
+const PrimaryBtn = styled.button`
+  width: 100%;
+  margin-top: 18px;
+  background: ${COLORS.primary};
+  color: ${COLORS.primaryText};
+  border: none;
+  padding: 14px 0;
+  border-radius: 8px;
+  font-size: 15px;
+  cursor: pointer;
+`;
+const PlainBtn = styled.button`
+  background: none;
+  border: 1px solid ${COLORS.border};
+  padding: 10px 14px;
+  border-radius: 8px;
+  cursor: pointer;
+`;
+
+/* ---------- modal ---------- */
 const ModalOverlay = styled.div`
   position: fixed;
-  top: 0;
-  left: 0;
-  height: 100vh;
-  width: 100vw;
-  background: rgba(0,0,0,0.5);
+  inset: 0;
+  background: rgba(0, 0, 0, 0.55);
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 1000;
+  z-index: 999;
 `;
-const ModalContent = styled.div`
-  background: white;
-  padding: 30px;
-  border-radius: 12px;
-  max-width: 500px;
+const ModalBox = styled.div`
+  background: ${COLORS.card};
   width: 100%;
-  form {
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-    input { padding: 10px; border: 1px solid #ccc; border-radius: 6px; }
-    label { font-size: 14px; }
-    button { background: ${COLORS.button}; color: white; padding: 10px; border: none; border-radius: 6px; }
+  max-width: 460px;
+  max-height: 80vh;
+  border-radius: 14px;
+  padding: 26px 30px;
+  overflow-y: auto;
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.25);
+`;
+const ModalTitle = styled.h3`
+  margin: 0 0 16px;
+`;
+const ModalFooter = styled.div`
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 22px;
+`;
+const AddrCard = styled.div`
+  border: 2px solid
+    ${(p) => (p.selected ? COLORS.accent : COLORS.border)};
+  border-radius: 12px;
+  padding: 14px;
+  display: flex;
+  gap: 12px;
+  cursor: pointer;
+  background: ${(p) => (p.selected ? COLORS.successBg : COLORS.card)};
+  transition: border 0.15s;
+  & + & {
+    margin-top: 12px;
+  }
+  input {
+    margin-top: 3px;
+  }
+`;
+
+/* placeholder for existing quick‑add modal */
+const ModalContent = styled(ModalBox)``;
+
+/* ----- payment ----- */
+const PaymentOptions = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  label {
+    font-size: 15px;
+    input {
+      margin-right: 6px;
+    }
   }
 `;

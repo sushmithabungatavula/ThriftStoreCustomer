@@ -1,3 +1,4 @@
+// EcommerceHome.jsx
 import React, { useState, useEffect, useContext } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
@@ -51,36 +52,39 @@ const EcommerceHome = () => {
     fetchData();
   }, []);
 
-  const toTitleCase = (str) => {
-    return str
+  const toTitleCase = (str) =>
+    str
       ?.toLowerCase()
       .split(' ')
-      .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+      .map(w => w.charAt(0).toUpperCase() + w.slice(1))
       .join(' ');
-  };
 
   const handleSearch = (e) => {
     const query = e.target.value.toLowerCase();
     setSearchQuery(query);
-    const filtered = products.filter(p =>
-      p.name?.toLowerCase().includes(query) ||
-      p.brand?.toLowerCase().includes(query)
+    setFilteredProducts(
+      products.filter(p =>
+        p.name.toLowerCase().includes(query) ||
+        p.brand.toLowerCase().includes(query)
+      )
     );
-    setFilteredProducts(filtered);
-  };
-
-  const handleProductClick = (productId) => {
-    navigate(`/product-detail/${productId}`);
   };
 
   const handleSortChange = (e) => {
     const sort = e.target.value;
     setSortBy(sort);
     const sorted = [...filteredProducts];
-    if (sort === 'price') sorted.sort((a, b) => a.price - b.price);
-    else if (sort === 'rating') sorted.sort((a, b) => b.rating - a.rating);
+    if (sort === 'price') {
+      sorted.sort((a, b) =>
+        parseFloat(a.selling_price) - parseFloat(b.selling_price)
+      );
+    } else if (sort === 'rating') {
+      sorted.sort((a, b) => b.rating - a.rating);
+    }
     setFilteredProducts(sorted);
   };
+
+  if (loading) return <Loader>Loading...</Loader>;
 
   return (
     <Page>
@@ -97,53 +101,66 @@ const EcommerceHome = () => {
         </Select>
       </SortBar>
 
-      {loading ? <Loader>Loading...</Loader> : (
-        <Grid>
-          {filteredProducts.map(product => {
-            const isInWishlist = wishlist.includes(product.item_id);
-            const wishlistIcon = isInWishlist ? '❤️' : '🤍';
-            const cartItem = cartItems.find(item => item.item_id === product.item_id);
-            const quantity = cartItem ? cartItem.quantity : 0;
+      <Grid>
+        {filteredProducts.map(product => {
+          const cost = parseFloat(product.cost_price);
+          const sale = parseFloat(product.selling_price);
+          const discountPercent = Math.round(((cost - sale) / cost) * 100);
 
-            return (
-              <Card key={product.item_id} onClick={() => handleProductClick(product.item_id)}>
-                <Image src={product.imageURL} alt={product.name} />
-                <Info>
-                  <h3>{toTitleCase(product.name)}</h3>
-                  <p><strong>Brand:</strong> {toTitleCase(product.brand) || 'N/A'}</p>
-                  <p><strong>Size:</strong> {product.size || 'Free Size'}</p>
-                  <p><strong>Price:</strong> ${product.selling_price}</p>
-                </Info>
-                <Wishlist
-                  onClick={(e) => {
+          const isInWishlist = wishlist.includes(product.item_id);
+          const wishlistIcon = isInWishlist ? '❤️' : '🤍';
+          const cartItem = cartItems.find(item => item.item_id === product.item_id);
+          const quantity = cartItem ? cartItem.quantity : 0;
+
+          return (
+            <Card key={product.item_id} onClick={() => navigate(`/product-detail/${product.item_id}`)}>
+              <Image src={product.imageURL} alt={product.name} />
+              <Info>
+                <h3>{toTitleCase(product.name)}</h3>
+                <p><strong>Brand:</strong> {toTitleCase(product.brand)}</p>
+                <p><strong>Size:</strong> {product.size || 'Free Size'}</p>
+                <PriceRow>
+                  <SellingPrice>${sale.toFixed(2)}</SellingPrice>
+                  <CostPrice>${cost.toFixed(2)}</CostPrice>
+                  <Discount>{discountPercent}% off</Discount>
+                </PriceRow>
+              </Info>
+              <WishlistIcon
+                onClick={e => {
+                  e.stopPropagation();
+                  handleWishlistToggle(product.item_id);
+                }}
+              >
+                {wishlistIcon}
+              </WishlistIcon>
+
+              {quantity > 0 ? (
+                <>
+                  <QuantityControls>
+                    <button onClick={e => { e.stopPropagation(); handleReduceQuantity(product.item_id); }}>-</button>
+                    <span>{quantity}</span>
+                    <button onClick={e => { e.stopPropagation(); handleAddToCart(product); }}>+</button>
+                  </QuantityControls>
+                  <ViewCartButton
+                    onClick={e => { e.stopPropagation(); navigate('/CheckoutPage'); }}
+                  >
+                    View Cart
+                  </ViewCartButton>
+                </>
+              ) : (
+                <AddButton
+                  onClick={e => {
                     e.stopPropagation();
-                    handleWishlistToggle(product.item_id);
+                    handleAddToCart(product);
                   }}
-                >{wishlistIcon}</Wishlist>
-
-                {quantity > 0 ? (
-                  <>
-                    <QuantityControls>
-                      <button onClick={(e) => { e.stopPropagation(); handleReduceQuantity(product.item_id); }}>-</button>
-                      <span>{quantity}</span>
-                      <button onClick={(e) => { e.stopPropagation(); handleAddToCart(product); }}>+</button>
-                    </QuantityControls>
-                    <ViewCartButton
-                    onClick={(e) => {e.stopPropagation();navigate('/CheckoutPage');}}>View Cart</ViewCartButton>
-                  </>
-                ) : (
-                  <AddButton
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleAddToCart(product);
-                    }}
-                  >Add to Cart</AddButton>
-                )}
-              </Card>
-            );
-          })}
-        </Grid>
-      )}
+                >
+                  Add to Cart
+                </AddButton>
+              )}
+            </Card>
+          );
+        })}
+      </Grid>
     </Page>
   );
 };
@@ -193,9 +210,7 @@ const Card = styled.div`
   cursor: pointer;
   position: relative;
   transition: transform 0.2s ease;
-  &:hover {
-    transform: scale(1.01);
-  }
+  &:hover { transform: scale(1.01); }
 `;
 
 const Image = styled.img`
@@ -207,17 +222,33 @@ const Image = styled.img`
 const Info = styled.div`
   padding: 16px;
   color: ${COLORS.text};
-  h3 {
-    margin: 0 0 10px;
-    font-size: 18px;
-  }
-  p {
-    margin: 4px 0;
-    font-size: 14px;
-  }
+  h3 { margin: 0 0 10px; font-size: 18px; }
+  p { margin: 4px 0; font-size: 14px; }
 `;
 
-const Wishlist = styled.div`
+const PriceRow = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 4px 0;
+`;
+
+const SellingPrice = styled.span`
+  color: ${COLORS.cartGreen};
+  font-weight: bold;
+`;
+
+const CostPrice = styled.span`
+  text-decoration: line-through;
+  color: ${COLORS.text};
+`;
+
+const Discount = styled.span`
+  color: #e57373;
+  font-size: 12px;
+`;
+
+const WishlistIcon = styled.div`
   position: absolute;
   top: 12px;
   right: 16px;
@@ -238,7 +269,6 @@ const AddButton = styled.button`
 `;
 
 const ViewCartButton = styled(AddButton)`
-  background-color: ${COLORS.button};
   margin-top: 4px;
 `;
 
@@ -247,15 +277,8 @@ const QuantityControls = styled.div`
   justify-content: center;
   align-items: center;
   margin: 12px 0 4px;
-  button {
-    padding: 6px 12px;
-    font-size: 16px;
-    cursor: pointer;
-  }
-  span {
-    margin: 0 10px;
-    font-size: 16px;
-  }
+  button { padding: 6px 12px; font-size: 16px; cursor: pointer; }
+  span { margin: 0 10px; font-size: 16px; }
 `;
 
 const Loader = styled.div`

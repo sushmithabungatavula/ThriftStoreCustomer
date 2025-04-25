@@ -99,7 +99,7 @@ export default function OrderDetails() {
   };
 
   return (
-    <Box>
+    <Box style={{ color: '#000',marginBottom: '120px' }}>
       <Grid container justifyContent="center" alignItems="center" sx={{ minHeight: '100%' }}>
         <Grid item xs={12} sm={10} md={12} lg={12}>
           <Card>
@@ -173,9 +173,6 @@ export default function OrderDetails() {
               <CardActions sx={{ p: 2, justifyContent: 'center' }}>
                 <Button variant="text" size="small" onClick={handleCancel}>
                   Cancel
-                </Button>
-                <Button variant="text" size="small">
-                  Pre-pay
                 </Button>
                 <Button variant="text" size="small" sx={{ color: 'rgba(0,0,0,0.6)' }}>
                   <i className="fas fa-ellipsis-v" />

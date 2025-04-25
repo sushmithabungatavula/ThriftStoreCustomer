@@ -128,6 +128,7 @@ const Checkout = () => {
   );
   const toggleStep = (i) => setExpandedStep(expandedStep === i ? null : i);
 
+
   /* ───────────────── order handler ───────────────── */
   const handlePlaceOrder = async () => {
     if (!cartItems.length) return alert('Cart is empty.');
@@ -143,11 +144,11 @@ const Checkout = () => {
         vendor_id: d?.vendor_id || null,
       };
     });
-
+    const customer_id = localStorage.getItem('customerId') || null;
     try {
       for (const item of orderItems) {
         await axios.post('http://localhost:3000/api/order', {
-          customer_id,
+          customer_id ,
           order_date: orderDate,
           order_status: 'placed',
           payment_status: paymentMethod,

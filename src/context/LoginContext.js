@@ -233,6 +233,7 @@ const handleReduceQuantity = async (itemId) => {
         token,
         setToken,
         customer_id,
+        setCustomerId,
         wishlist_id,
         setCartId,
         setWishIdlist,
